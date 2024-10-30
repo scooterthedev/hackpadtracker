@@ -28,7 +28,23 @@ function App() {
 
   const navigate = useNavigate();
 
-  const authorizedUsers = ['Scooter Y', 'CODER KID', 'xX_ALEXREN_Xx']; // Add more authorized users here if nessecary
+// Load saved progress when PR URL is submitted
+useEffect(() => {
+  if (isSubmitted && prUrl) {
+    const savedProgress = getPRProgress(prUrl);
+    if (savedProgress) {
+      setProgress(savedProgress.progress);
+      setCurrentStage(savedProgress.currentStage);
+    } else {
+      // Initialize with 0% progress and first stage
+      setProgress(0);
+      setCurrentStage(stages[0]);
+      savePRProgress(prUrl, 0, stages[0]);
+    }
+  }
+}, [isSubmitted, prUrl, stages]);
+
+  const authorizedUsers = ['Scooter Y', 'CODER KID', 'xX_ALEXREN_Xx']; // Add more authorized users here if necessary
 
 const verifyUser = async (token: string, userId: string) => {
   try {
@@ -78,7 +94,7 @@ useEffect(() => {
   }
 }, []);
 
-useEffect(() => {
+  useEffect(() => {
   const handleCallback = async () => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
