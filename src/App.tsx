@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
 import { Github, Link2, AlertCircle, Shield } from 'lucide-react';
 import ProgressBar from './components/ProgressBar';
 import AdminControls from './components/AdminControls';
 import LoginModal from './components/LoginModal';
 import { isValidGitHubPRUrl } from './utils/validation';
-import { authenticateAdmin } from './utils/auth';
 import { savePRProgress, getPRProgress } from './utils/storage';
+import Cookies from 'js-cookie';
 
 function App() {
   const [prUrl, setPrUrl] = useState('');
@@ -25,25 +26,100 @@ function App() {
     'Shipped :D ',
   ];
 
-  // Load saved progress when PR URL is submitted
-  useEffect(() => {
-    if (isSubmitted && prUrl) {
-      const savedProgress = getPRProgress(prUrl);
-      if (savedProgress) {
-        setProgress(savedProgress.progress);
-        setCurrentStage(savedProgress.currentStage);
-      } else {
-        // Initialize with 0% progress and first stage
-        setProgress(0);
-        setCurrentStage(stages[0]);
-        savePRProgress(prUrl, 0, stages[0]);
+  const navigate = useNavigate();
+
+  const authorizedUsers = ['Scooter Y', 'CODER KID', 'xX_ALEXREN_Xx']; // Add more authorized users here if nessecary
+
+const verifyUser = async (token: string, userId: string) => {
+  try {
+    console.log('Verifying user with token:', token);
+
+    const response = await fetch(`https://localhost:3001/slack/api/users.profile.get?user=${userId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+    console.log('Full response data:', data);
+
+    if (!data.ok) {
+      console.error('Error from Slack API:', data.error);
+      setLoginError(`Error: ${data.error}`);
+      return;
+    }
+
+    const profile = data.profile;
+    console.log('Profile data:', profile);
+
+    const userName = profile.display_name || profile.real_name;
+    console.log('Authenticated user:', userName);
+
+    if (authorizedUsers.includes(userName)) {
+      console.log('User is authorized');
+      setIsAdmin(true);
+      setShowLoginModal(false);
+      setLoginError('');
+    } else {
+      console.log('User is not authorized');
+      setLoginError('Unauthorized user');
+    }
+  } catch (error: any) {
+    console.error('Error during verification:', error);
+    setLoginError(error.message);
+  }
+};
+
+useEffect(() => {
+  const token = Cookies.get('slack_token');
+  const userId = Cookies.get('slack_user_id');
+  if (token && userId) {
+    verifyUser(token, userId);
+  }
+}, []);
+
+useEffect(() => {
+  const handleCallback = async () => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+
+    if (code) {
+      try {
+        const response = await fetch('https://slack.com/api/oauth.v2.access', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            client_id: '2210535565.7957522136834',
+            client_secret: 'secret',
+            code,
+            redirect_uri: 'https://localhost:5173/callback',
+          }),
+        });
+
+        const data = await response.json();
+        if (data.ok) {
+          Cookies.set('slack_token', data.access_token);
+          Cookies.set('slack_user_id', data.authed_user.id);
+          await verifyUser(data.access_token, data.authed_user.id);
+          navigate('/');
+        } else {
+          setLoginError(`Error: ${data.error}`);
+        }
+      } catch (error: any) {
+        console.error('Error:', error);
+        setLoginError(error.message);
       }
     }
-  }, [isSubmitted, prUrl]);
+  };
+
+  handleCallback();
+}, [navigate]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!isValidGitHubPRUrl(prUrl)) {
       setIsValid(false);
       return;
@@ -51,175 +127,165 @@ function App() {
 
     setIsValid(true);
     setIsSubmitted(true);
-    
-    // Check for saved progress first
+
     const savedProgress = getPRProgress(prUrl);
     if (savedProgress) {
       setProgress(savedProgress.progress);
       setCurrentStage(savedProgress.currentStage);
     } else {
-      // Initialize with 0% progress and first stage
       setProgress(0);
       setCurrentStage(stages[0]);
       savePRProgress(prUrl, 0, stages[0]);
     }
   };
 
-  const handleLogin = (credentials: { username: string; password: string }) => {
-    if (authenticateAdmin(credentials)) {
-      setIsAdmin(true);
-      setShowLoginModal(false);
-      setLoginError('');
-    } else {
-      setLoginError('Invalid credentials');
-    }
-  };
-
   const handleLogout = () => {
     setIsAdmin(false);
+    Cookies.remove('slack_token');
   };
 
   const handleProgressChange = (newProgress: number) => {
     setProgress(newProgress);
     const newStage = stages[Math.floor((newProgress / 100) * (stages.length - 1))];
     setCurrentStage(newStage);
-    // Save progress when admin changes it
     if (isAdmin && prUrl) {
       savePRProgress(prUrl, newProgress, newStage);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-2xl mx-auto">
-          {/* Header with Admin Controls */}
-          <div className="flex items-center justify-between mb-12">
-            <div className="flex items-center space-x-3">
-              <Github className="w-10 h-10" />
-              <h1 className="text-4xl font-bold">PR Progress Tracker</h1>
-            </div>
-            <div>
-              {isAdmin ? (
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium transition-colors"
-                >
-                  <Shield className="w-4 h-4" />
-                  <span>Logout</span>
-                </button>
-              ) : (
-                <button
-                  onClick={() => setShowLoginModal(true)}
-                  className="flex items-center space-x-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors"
-                >
-                  <Shield className="w-4 h-4" />
-                  <span>Admin Login</span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Main Content */}
-          <div className="bg-gray-800/50 backdrop-blur-lg rounded-xl p-8 shadow-xl border border-gray-700">
-            {!isSubmitted ? (
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <label htmlFor="pr-url" className="block text-sm font-medium text-gray-300">
-                    GitHub Pull Request URL
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Link2 className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      type="text"
-                      id="pr-url"
-                      value={prUrl}
-                      onChange={(e) => {
-                        setPrUrl(e.target.value);
-                        setIsValid(true);
-                      }}
-                      className={`block w-full pl-10 pr-4 py-3 bg-gray-700/50 border ${
-                        isValid ? 'border-gray-600' : 'border-red-500'
-                      } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors`}
-                      placeholder="https://github.com/owner/repo/pull/123"
-                    />
-                  </div>
-                  {!isValid && (
-                    <div className="flex items-center space-x-2 text-red-400 text-sm mt-2">
-                      <AlertCircle className="h-4 w-4" />
-                      <span>Please enter a valid GitHub PR URL</span>
-                    </div>
+    <Routes>
+      <Route path="/callback" element={<div>Handling OAuth callback...</div>} />
+      <Route path="/" element={
+        <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
+          <div className="container mx-auto px-4 py-16">
+            <div className="max-w-2xl mx-auto">
+              <div className="flex items-center justify-between mb-12">
+                <div className="flex items-center space-x-3">
+                  <Github className="w-10 h-10" />
+                  <h1 className="text-4xl font-bold">PR Progress Tracker</h1>
+                </div>
+                <div>
+                  {isAdmin ? (
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      <Shield className="w-4 h-4" />
+                      <span>Logout</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setShowLoginModal(true)}
+                      className="flex items-center space-x-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      <Shield className="w-4 h-4" />
+                      <span>Admin Login</span>
+                    </button>
                   )}
                 </div>
-                <button
-                  type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900"
-                >
-                  Track Progress
-                </button>
-              </form>
-            ) : (
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <h2 className="text-xl font-semibold">Pull Request Status</h2>
-                  <p className="text-gray-400 text-sm break-all">{prUrl}</p>
-                </div>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-blue-400">{currentStage}</span>
-                    <span className="text-sm text-gray-400">{Math.round(progress)}%</span>
-                  </div>
-                  <ProgressBar progress={progress} />
-                </div>
-
-                {isAdmin && (
-                  <AdminControls
-                    progress={progress}
-                    currentStage={currentStage}
-                    stages={stages}
-                    onProgressChange={handleProgressChange}
-                    onStageChange={(stage) => {
-                      setCurrentStage(stage);
-                      if (prUrl) {
-                        savePRProgress(prUrl, progress, stage);
-                      }
-                    }}
-                  />
-                )}
-
-                <div className="flex justify-end">
-                  <button
-                    onClick={() => {
-                      setIsSubmitted(false);
-                      setPrUrl('');
-                      setProgress(0);
-                      setCurrentStage('');
-                    }}
-                    className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
-                  >
-                    Track Another PR
-                  </button>
-                </div>
               </div>
-            )}
-          </div>
-        </div>
-      </div>
 
-      {showLoginModal && (
-        <LoginModal
-          onClose={() => {
-            setShowLoginModal(false);
-            setLoginError('');
-          }}
-          onLogin={handleLogin}
-          error={loginError}
-        />
-      )}
-    </div>
+              <div className="bg-gray-800/50 backdrop-blur-lg rounded-xl p-8 shadow-xl border border-gray-700">
+                {!isSubmitted ? (
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="space-y-2">
+                      <label htmlFor="pr-url" className="block text-sm font-medium text-gray-300">
+                        GitHub Pull Request URL
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <Link2 className="w-5 h-5 text-gray-400" />
+                        </div>
+                        <input
+                          id="pr-url"
+                          name="pr-url"
+                          type="url"
+                          className="block w-full pl-10 pr-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          placeholder="https://github.com/user/repo/pull/1"
+                          value={prUrl}
+                          onChange={(e) => setPrUrl(e.target.value)}
+                        />
+                      </div>
+                      {!isValid && (
+                        <div className="flex items-center space-x-2 text-red-400 text-sm mt-2">
+                          <AlertCircle className="w-4 h-4" />
+                          <span>Invalid GitHub PR URL</span>
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      type="submit"
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+                    >
+                      Track Progress
+                    </button>
+                  </form>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <h2 className="text-xl font-semibold">Pull Request Status</h2>
+                      <p className="text-gray-400 text-sm break-all">{prUrl}</p>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-blue-400">{currentStage}</span>
+                        <span className="text-sm text-gray-400">{Math.round(progress)}%</span>
+                      </div>
+                      <ProgressBar progress={progress} />
+                    </div>
+
+                    {isAdmin && (
+                      <AdminControls
+                        progress={progress}
+                        currentStage={currentStage}
+                        stages={stages}
+                        onProgressChange={handleProgressChange}
+                        onStageChange={(stage) => {
+                          setCurrentStage(stage);
+                          savePRProgress(prUrl, progress, stage);
+                        }}
+                      />
+                    )}
+
+                    <div className="flex justify-end">
+                      <button
+                        onClick={() => {
+                          setIsSubmitted(false);
+                          setPrUrl('');
+                        }}
+                        className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                      >
+                        Track Another PR
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {showLoginModal && (
+            <LoginModal
+              onClose={() => {
+                setShowLoginModal(false);
+                setLoginError('');
+              }}
+              error={loginError}
+            />
+          )}
+        </div>
+      } />
+    </Routes>
   );
 }
 
-export default App;
+function Root() {
+  return (
+    <Router>
+      <App />
+    </Router>
+  );
+}
+
+export default Root;
