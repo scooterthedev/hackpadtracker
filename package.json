@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "run-all-dev": "concurrently \"npm run dev\" \"node src/utils/proxy.js\""
+    "run-all-dev": "concurrently \"npm run dev\" \"node src/utils/proxy.js\"",
+    "run-all-build": "concurrently \"npm run build\" \"node src/utils/proxy.js\""
   },
   "dependencies": {
     "@slack/web-api": "^7.7.0",
