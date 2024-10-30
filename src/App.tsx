@@ -50,7 +50,7 @@ const verifyUser = async (token: string, userId: string) => {
   try {
     console.log('Verifying user with token:', token);
 
-    const response = await fetch(`https://localhost:3001/slack/api/users.profile.get?user=${userId}`, {
+    const response = await fetch(`https://hackpad-tracker.vercel.app/api/slack/api/users.profile.get?user=${userId}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -110,7 +110,7 @@ useEffect(() => {
             client_id: '2210535565.7957522136834',
             client_secret: process.env.secret_token,
             code,
-            redirect_uri: 'https://localhost:5173/callback',
+            redirect_uri: 'https://hackpad-tracker.vercel.app/callback',
           }),
         });
 

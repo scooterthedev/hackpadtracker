@@ -7,7 +7,18 @@ export default defineConfig({
   server: {
     https: true,
     proxy: {
-      '/slack': 'http://localhost:3001',
+      '/api/slack': {
+        target: 'https://slack.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/slack/, ''),
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            if (req.headers.authorization) {
+              proxyReq.setHeader('Authorization', req.headers.authorization);
+            }
+          });
+        },
+      },
     },
   },
 });
