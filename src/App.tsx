@@ -108,7 +108,7 @@ useEffect(() => {
           },
           body: new URLSearchParams({
             client_id: '2210535565.7957522136834',
-            client_secret: 'secret',
+            client_secret: process.env.secret_token,
             code,
             redirect_uri: 'https://localhost:5173/callback',
           }),
