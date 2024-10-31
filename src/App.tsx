@@ -112,7 +112,7 @@ useEffect(() => {
             client_id: '2210535565.7957522136834',
             client_secret: import.meta.env.VITE_CODE,
             code,
-            redirect_uri: 'https://hackpadtracker-eta.vercel.app//callback',
+            redirect_uri: 'https://hackpadtracker-eta.vercel.app/callback',
           }),
         });
 
