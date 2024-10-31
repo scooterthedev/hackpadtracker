@@ -3,11 +3,11 @@
   "routes": [
     {
       "src": "/callback",
-      "dest": "/"
+      "dest": "https://hackpad-tracker.vercel.app/callback"
     },
     {
       "src": "/(.*)",
-      "dest": ""
+      "dest": "https://hackpad-tracker.vercel.app"
     }
   ]
 }
