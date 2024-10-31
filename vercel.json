@@ -1,9 +1,13 @@
 {
   "version": 2,
-  "rewrites": [
+  "routes": [
     {
-      "source": "/callback",
-      "destination": "/"
+      "src": "/callback",
+      "dest": "/"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/"
     }
   ]
 }
