@@ -8,5 +8,11 @@
         "Location": "/"
       }
     }
-    ]
+  ],
+  "rewrites": [
+    {
+      "source": "/api/slack/(.*)",
+      "destination": "https://slack.com/$1"
+    }
+  ]
 }
