@@ -32,18 +32,27 @@ function App() {
 // Load saved progress when PR URL is submitted
 useEffect(() => {
   if (isSubmitted && prUrl) {
-    const savedProgress = getPRProgress(prUrl);
-    if (savedProgress) {
-      setProgress(savedProgress.progress);
-      setCurrentStage(savedProgress.currentStage);
-    } else {
-      // Initialize with 0% progress and first stage
-      setProgress(0);
-      setCurrentStage(stages[0]);
-      savePRProgress(prUrl, 0, stages[0]);
-    }
+    getPRProgress(prUrl).then(savedProgress => {
+      if (savedProgress) {
+        setProgress(savedProgress.progress);
+        setCurrentStage(savedProgress.currentStage);
+      } else {
+        setProgress(0);
+        setCurrentStage(stages[0]);
+        savePRProgress(prUrl, 0, stages[0]);
+      }
+    });
   }
 }, [isSubmitted, prUrl, stages]);
+
+const handleProgressChange = (newProgress: number) => {
+  setProgress(newProgress);
+  const newStage = stages[Math.floor((newProgress / 100) * (stages.length - 1))];
+  setCurrentStage(newStage);
+  if (isAdmin && prUrl) {
+    savePRProgress(prUrl, newProgress, newStage);
+  }
+};
 
   const authorizedUsers = ['Scooter Y', 'CODER KID', 'xX_ALEXREN_Xx']; // Add more authorized users here if necessary
 

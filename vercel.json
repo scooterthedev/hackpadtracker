@@ -11,6 +11,10 @@
     {
       "source": "/api/slack/(.*)",
       "destination": "https://slack.com/$1"
+    },
+    {
+      "source": "/api/progress",
+      "destination": "/api/progress.js"
     }
   ]
 }
