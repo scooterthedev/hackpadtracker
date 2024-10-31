@@ -4,10 +4,6 @@
     {
       "src": "/callback",
       "dest": "https://hackpad-tracker.vercel.app/callback"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "https://hackpad-tracker.vercel.app"
     }
   ]
 }
