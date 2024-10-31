@@ -17,6 +17,7 @@ function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const client_secrets = process.env.client_secret;
 
   const stages = [
     'PR Approved',
@@ -108,7 +109,7 @@ useEffect(() => {
           },
           body: new URLSearchParams({
             client_id: '2210535565.7957522136834',
-            client_secret: process.env.client_secret,
+            client_secret: client_secrets || '',
             code,
             redirect_uri: 'https://hackpad-progress-tracker.vercel.app/callback',
           }),
