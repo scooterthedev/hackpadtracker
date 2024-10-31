@@ -9,24 +9,42 @@ const db = mysql.createConnection({
 });
 
 db.connect(function (err) {
-  if (err) throw err;
+  if (err) {
+    console.error('Error connecting to MySQL:', err);
+    throw err;
+  }
   console.log('MySQL connected...');
 });
 
-module.exports = (req: { method: string; query: { pr: any; }; body: { pr: any; progress: any; state: any; }; }, res: { status: (arg0: number) => { (): any; new(): any; json: { (arg0: any): void; new(): any; }; send: { (arg0: string): void; new(): any; }; }; }) => {
+module.exports = (req, res) => {
+  console.log(`Received ${req.method} request for PR: ${req.query.pr || req.body.pr}`);
+
   if (req.method === 'GET') {
     const pr = req.query.pr;
+    console.log('Fetching progress for PR:', pr);
     db.query('SELECT * FROM PRProgress WHERE PR = ?', [pr], (err, result) => {
-      if (err) throw err;
+      if (err) {
+        console.error('Error fetching progress:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+        return;
+      }
+      console.log('Progress fetched:', result[0]);
       res.status(200).json(result[0]);
     });
   } else if (req.method === 'POST') {
     const { pr, progress, state } = req.body;
+    console.log('Updating progress for PR:', pr, 'with progress:', progress, 'and state:', state);
     db.query('INSERT INTO PRProgress (PR, Progress, State) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Progress = ?, State = ?', [pr, progress, state, progress, state], (err, result) => {
-      if (err) throw err;
+      if (err) {
+        console.error('Error updating progress:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+        return;
+      }
+      console.log('Progress updated for PR:', pr);
       res.status(200).send('Progress updated');
     });
   } else {
+    console.warn('Method not allowed:', req.method);
     res.status(405).send('Method Not Allowed');
   }
 };
