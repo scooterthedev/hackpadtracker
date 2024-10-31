@@ -10,7 +10,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "https://hackpad-tracker.vercel.app"
+      "dest": "https://hackpad-progress-tracker.vercel.app"
     }
   ]
 }

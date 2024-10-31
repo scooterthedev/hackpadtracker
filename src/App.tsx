@@ -108,9 +108,9 @@ useEffect(() => {
           },
           body: new URLSearchParams({
             client_id: '2210535565.7957522136834',
-            client_secret: "ec163ede37e349ad9f0de4c2d7f2f81e",
+            client_secret: "73271bfeae65d8281541c9802507f364",
             code,
-            redirect_uri: 'https://hackpad-tracker.vercel.app/callback',
+            redirect_uri: 'https://hackpad-progress-tracker.vercel.app/callback',
           }),
         });
 
