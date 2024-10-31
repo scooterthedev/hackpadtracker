@@ -14,7 +14,7 @@
     },
     {
       "source": "/api/progress",
-      "destination": "/api/progress.j"
+      "destination": "/api/progress.js"
     }
   ]
 }
