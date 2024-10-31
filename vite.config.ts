@@ -19,6 +19,11 @@ export default defineConfig({
           });
         },
       },
+      '/api/progress': {
+        target: 'http://https://hackpadtracker-eta.vercel.app',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/progress/, '/api/progress.js')
+      }
     },
   },
 });
