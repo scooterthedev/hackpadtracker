@@ -110,7 +110,7 @@ useEffect(() => {
           },
           body: new URLSearchParams({
             client_id: '2210535565.7957522136834',
-            client_secret: client_secrets || '',
+            client_secret: process.env.VITE_VITING_CODE,
             code,
             redirect_uri: 'https://hackpad-progress-tracker.vercel.app/callback',
           }),
