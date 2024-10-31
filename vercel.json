@@ -7,10 +7,6 @@
       "headers": {
         "Location": "/"
       }
-    },
-    {
-      "src": "/(.*)",
-      "dest": "https://hackpad-progress-tracker.vercel.app"
     }
-  ]
+    ]
 }
