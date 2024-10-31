@@ -36,7 +36,7 @@ module.exports = (req, res) => {
     if (req.method === 'GET') {
         const pr = req.query.pr;
         logger.info('Fetching progress for PR:', pr);
-        db.query('SELECT * FROM PRProgress WHERE PR = ?', [pr], (err, result) => {
+        db.query('SELECT * FROM PR_Tracker WHERE PR = ?', [pr], (err, result) => {
             if (err) {
                 logger.error('Error fetching progress:', err);
                 res.status(500).json({ error: 'Internal Server Error' });
@@ -48,7 +48,7 @@ module.exports = (req, res) => {
     } else if (req.method === 'POST') {
         const { pr, progress, state } = req.body;
         logger.info('Updating progress for PR:', pr, 'with progress:', progress, 'and state:', state);
-        db.query('INSERT INTO PRProgress (PR, Progress, State) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Progress = ?, State = ?', [pr, progress, state, progress, state], (err, result) => {
+        db.query('INSERT INTO PR_Tracker (PR, Progress, State) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Progress = ?, State = ?', [pr, progress, state, progress, state], (err, result) => {
             if (err) {
                 logger.error('Error updating progress:', err);
                 res.status(500).json({ error: 'Internal Server Error' });

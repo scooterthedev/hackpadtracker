@@ -1,20 +1,22 @@
 {
   "version": 2,
-  "redirects": [
+  "builds": [
     {
-      "source": "/callback",
-      "destination": "/",
-      "statusCode": 302
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/slack/(.*)",
-      "destination": "https://slack.com/$1"
+      "src": "vite.config.ts",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
     },
     {
-      "source": "/api/progress",
-      "destination": "/api/progress.js"
+      "src": "src/api/progress.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/progress",
+      "dest": "/api/progress.js"
     }
   ]
 }
