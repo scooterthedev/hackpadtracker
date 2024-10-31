@@ -17,7 +17,7 @@ function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginError, setLoginError] = useState('');
-  const client_secrets = process.env.client_secret;
+  const client_secrets = process.env.VITE_VITING_CODE;
 
   const stages = [
     'PR Approved',
