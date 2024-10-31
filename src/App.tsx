@@ -51,7 +51,7 @@ const verifyUser = async (token: string, userId: string) => {
   try {
     console.log('Verifying user with token:', token);
 
-    const response = await fetch(`https://hackpad-progress-tracker.vercel.app/api/slack/api/users.profile.get?user=${userId}`, {
+    const response = await fetch(`https://hackpad-tracker.vercel.app/api/slack/api/users.profile.get?user=${userId}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -112,7 +112,7 @@ useEffect(() => {
             client_id: '2210535565.7957522136834',
             client_secret: import.meta.env.VITE_VITING_CODE,
             code,
-            redirect_uri: 'https://hackpad-progress-tracker.vercel.app/callback',
+            redirect_uri: 'https://hackpad-tracker.vercel.app/callback',
           }),
         });
 
@@ -220,7 +220,7 @@ useEffect(() => {
                           name="pr-url"
                           type="url"
                           className="block w-full pl-10 pr-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                          placeholder="https://github.com/user/repo/pull/1"
+                          placeholder="https://github.com/hackclub/hackpad/pull/1"
                           value={prUrl}
                           onChange={(e) => setPrUrl(e.target.value)}
                         />
