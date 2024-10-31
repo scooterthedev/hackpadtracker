@@ -1,4 +1,4 @@
-const mysql = require('mysql');
+import mysql from "mysql";
 
 const db = mysql.createConnection({
   host: '9burt.h.filess.io',
@@ -8,12 +8,12 @@ const db = mysql.createConnection({
   port: 3307
 });
 
-db.connect(err => {
+db.connect(function (err) {
   if (err) throw err;
   console.log('MySQL connected...');
 });
 
-module.exports = (req, res) => {
+module.exports = (req: { method: string; query: { pr: any; }; body: { pr: any; progress: any; state: any; }; }, res: { status: (arg0: number) => { (): any; new(): any; json: { (arg0: any): void; new(): any; }; send: { (arg0: string): void; new(): any; }; }; }) => {
   if (req.method === 'GET') {
     const pr = req.query.pr;
     db.query('SELECT * FROM PRProgress WHERE PR = ?', [pr], (err, result) => {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Route, Routes, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
 import { Github, Link2, AlertCircle, Shield } from 'lucide-react';
 import ProgressBar from './components/ProgressBar';
 import AdminControls from './components/AdminControls';
@@ -32,8 +32,7 @@ function App() {
   // Load saved progress when PR URL is submitted
   useEffect(() => {
     if (isSubmitted && prUrl) {
-      (async () => {
-        const savedProgress = await getPRProgress(prUrl);
+      getPRProgress(prUrl).then(savedProgress => {
         if (savedProgress) {
           setProgress(savedProgress.progress);
           setCurrentStage(savedProgress.currentStage);
@@ -42,7 +41,7 @@ function App() {
           setCurrentStage(stages[0]);
           savePRProgress(prUrl, 0, stages[0]);
         }
-      })();
+      });
     }
   }, [isSubmitted, prUrl, stages]);
 
@@ -156,7 +155,7 @@ function App() {
     setIsValid(true);
     setIsSubmitted(true);
 
-    getPRProgress(prUrl).then((savedProgress) => {
+    getPRProgress(prUrl).then(savedProgress => {
       if (savedProgress) {
         setProgress(savedProgress.progress);
         setCurrentStage(savedProgress.currentStage);
@@ -166,137 +165,146 @@ function App() {
         savePRProgress(prUrl, 0, stages[0]);
       }
     });
+  };
 
-    const handleLogout = () => {
-      setIsAdmin(false);
-      Cookies.remove('slack_token');
-    };
+  const handleLogout = () => {
+    setIsAdmin(false);
+    Cookies.remove('slack_token');
+  };
 
-    return (
-        <Routes>
-          <Route path="/callback" element={<div>Handling OAuth callback...</div>}/>
-          <Route path="/" element={
-            <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
-              <div className="container mx-auto px-4 py-16">
-                <div className="max-w-2xl mx-auto">
-                  <div className="flex items-center justify-between mb-12">
-                    <div className="flex items-center space-x-3">
-                      <Github className="w-10 h-10"/>
-                      <h1 className="text-4xl font-bold">PR Progress Tracker</h1>
-                    </div>
-                    <div>
-                      {isAdmin ? (
-                          <button
-                              onClick={handleLogout}
-                              className="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium transition-colors"
-                          >
-                            <Shield className="w-4 h-4"/>
-                            <span>Logout</span>
-                          </button>
-                      ) : (
-                          <button
-                              onClick={() => setShowLoginModal(true)}
-                              className="flex items-center space-x-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors"
-                          >
-                            <Shield className="w-4 h-4"/>
-                            <span>Admin Login</span>
-                          </button>
-                      )}
-                    </div>
+  return (
+      <Routes>
+        <Route path="/callback" element={<div>Handling OAuth callback...</div>} />
+        <Route path="/" element={
+          <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
+            <div className="container mx-auto px-4 py-16">
+              <div className="max-w-2xl mx-auto">
+                <div className="flex items-center justify-between mb-12">
+                  <div className="flex items-center space-x-3">
+                    <Github className="w-10 h-10" />
+                    <h1 className="text-4xl font-bold">PR Progress Tracker</h1>
                   </div>
-
-                  <div className="bg-gray-800/50 backdrop-blur-lg rounded-xl p-8 shadow-xl border border-gray-700">
-                    {!isSubmitted ? (
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                          <div className="space-y-2">
-                            <label htmlFor="pr-url" className="block text-sm font-medium text-gray-300">
-                              GitHub Pull Request URL
-                            </label>
-                            <div className="relative">
-                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Link2 className="w-5 h-5 text-gray-400"/>
-                              </div>
-                              <input
-                                  id="pr-url"
-                                  name="pr-url"
-                                  type="url"
-                                  className="block w-full pl-10 pr-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                  placeholder="https://github.com/hackclub/hackpad/pull/1"
-                                  value={prUrl}
-                                  onChange={(e) => setPrUrl(e.target.value)}
-                              />
-                            </div>
-                            {!isValid && (
-                                <div className="flex items-center space-x-2 text-red-400 text-sm mt-2">
-                                  <AlertCircle className="w-4 h-4"/>
-                                  <span>Invalid GitHub PR URL</span>
-                                </div>
-                            )}
-                          </div>
-                          <button
-                              type="submit"
-                              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900"
-                          >
-                            Track Progress
-                          </button>
-                        </form>
+                  <div>
+                    {isAdmin ? (
+                        <button
+                            onClick={handleLogout}
+                            className="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium transition-colors"
+                        >
+                          <Shield className="w-4 h-4" />
+                          <span>Logout</span>
+                        </button>
                     ) : (
-                        <div className="space-y-6">
-                          <div className="space-y-2">
-                            <h2 className="text-xl font-semibold">Pull Request Status</h2>
-                            <p className="text-gray-400 text-sm break-all">{prUrl}</p>
-                          </div>
-                          <div className="space-y-4">
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm font-medium text-blue-400">{currentStage}</span>
-                              <span className="text-sm text-gray-400">{Math.round(progress)}%</span>
-                            </div>
-                            <ProgressBar progress={progress}/>
-                          </div>
-
-                          {isAdmin && (
-                              <AdminControls
-                                  progress={progress}
-                                  currentStage={currentStage}
-                                  stages={stages}
-                                  onProgressChange={handleProgressChange}
-                                  onStageChange={(stage) => {
-                                    setCurrentStage(stage);
-                                    savePRProgress(prUrl, progress, stage);
-                                  }}
-                              />
-                          )}
-
-                          <div className="flex justify-end">
-                            <button
-                                onClick={() => {
-                                  setIsSubmitted(false);
-                                  setPrUrl('');
-                                }}
-                                className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
-                            >
-                              Track Another PR
-                            </button>
-                          </div>
-                        </div>
+                        <button
+                            onClick={() => setShowLoginModal(true)}
+                            className="flex items-center space-x-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors"
+                        >
+                          <Shield className="w-4 h-4" />
+                          <span>Admin Login</span>
+                        </button>
                     )}
                   </div>
                 </div>
-              </div>
 
-              {showLoginModal && (
-                  <LoginModal
-                      onClose={() => {
-                        setShowLoginModal(false);
-                        setLoginError('');
-                      }}
-                      error={loginError}
-                  />
-              )}
+                <div className="bg-gray-800/50 backdrop-blur-lg rounded-xl p-8 shadow-xl border border-gray-700">
+                  {!isSubmitted ? (
+                      <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="space-y-2">
+                          <label htmlFor="pr-url" className="block text-sm font-medium text-gray-300">
+                            GitHub Pull Request URL
+                          </label>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <Link2 className="w-5 h-5 text-gray-400" />
+                            </div>
+                            <input
+                                id="pr-url"
+                                name="pr-url"
+                                type="url"
+                                className="block w-full pl-10 pr-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                placeholder="https://github.com/hackclub/hackpad/pull/1"
+                                value={prUrl}
+                                onChange={(e) => setPrUrl(e.target.value)}
+                            />
+                          </div>
+                          {!isValid && (
+                              <div className="flex items-center space-x-2 text-red-400 text-sm mt-2">
+                                <AlertCircle className="w-4 h-4" />
+                                <span>Invalid GitHub PR URL</span>
+                              </div>
+                          )}
+                        </div>
+                        <button
+                            type="submit"
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+                        >
+                          Track Progress
+                        </button>
+                      </form>
+                  ) : (
+                      <div className="space-y-6">
+                        <div className="space-y-2">
+                          <h2 className="text-xl font-semibold">Pull Request Status</h2>
+                          <p className="text-gray-400 text-sm break-all">{prUrl}</p>
+                        </div>
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-blue-400">{currentStage}</span>
+                            <span className="text-sm text-gray-400">{Math.round(progress)}%</span>
+                          </div>
+                          <ProgressBar progress={progress} />
+                        </div>
+
+                        {isAdmin && (
+                            <AdminControls
+                                progress={progress}
+                                currentStage={currentStage}
+                                stages={stages}
+                                onProgressChange={handleProgressChange}
+                                onStageChange={(stage) => {
+                                  setCurrentStage(stage);
+                                  savePRProgress(prUrl, progress, stage);
+                                }}
+                            />
+                        )}
+
+                        <div className="flex justify-end">
+                          <button
+                              onClick={() => {
+                                setIsSubmitted(false);
+                                setPrUrl('');
+                              }}
+                              className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                          >
+                            Track Another PR
+                          </button>
+                        </div>
+                      </div>
+                  )}
+                </div>
+              </div>
             </div>
-          }/>
-        </Routes>
-    );
-  }
+
+            {showLoginModal && (
+                <LoginModal
+                    onClose={() => {
+                      setShowLoginModal(false);
+                      setLoginError('');
+                    }}
+                    error={loginError}
+                />
+            )}
+          </div>
+        } />
+      </Routes>
+  );
 }
-export default App;
+
+function Root() {
+  return (
+    <Router>
+      <App />
+    </Router>
+  );
+}
+
+export default Root;
