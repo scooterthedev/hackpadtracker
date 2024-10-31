@@ -1,3 +1,9 @@
 {
-  "rewrites": [{ "source": "/callback", "destination": "/" }]
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/callback",
+      "destination": "/"
+    }
+  ]
 }
