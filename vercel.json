@@ -12,7 +12,7 @@
   "rewrites": [
     {
       "source": "/api/slack/(.*)",
-      "destination": "https://slack.com/$1"
+      "destination": "https://hackpad-progress-tracker.vercel.app/api/slack/$1"
     }
   ]
 }
