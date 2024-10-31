@@ -1,12 +1,10 @@
 {
   "version": 2,
-  "routes": [
+  "redirects": [
     {
-      "src": "/callback",
-      "status": 302,
-      "headers": {
-        "Location": "/"
-      }
+      "source": "/callback",
+      "destination": "/",
+      "statusCode": 302
     }
   ],
   "rewrites": [
