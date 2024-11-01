@@ -9,14 +9,14 @@
       }
     },
     {
-      "src": "src/api/progress.tsx",
+      "src": "src/api/progress.ts",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/api/progress",
-      "dest": "/api/progress.tsx"
+      "dest": "/api/progress.ts"
     },
     {
       "src": "/api/slack/(.*)",
