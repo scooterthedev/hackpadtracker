@@ -20,61 +20,100 @@ const dbConfig = {
     user: 'PRTracker_telephone',
     password: '9a25926ccb8d15c44c2dee92f217eb21e3fd9712',
     database: 'PRTracker_telephone',
-    port: 3307
+    port: 3307,
+    connectTimeout: 10000, // 10 seconds
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
 };
 
-let debounceTimeout: NodeJS.Timeout;
+// Create a connection pool instead of single connections
+const pool = mysql.createPool(dbConfig);
+
+// Helper function to validate PR data
+function validatePRData(pr: string, progress: number, state: string): string | null {
+    if (!pr) return 'PR is required';
+    if (progress === undefined || progress < 0 || progress > 100) return 'Progress must be between 0 and 100';
+    if (!state) return 'State is required';
+    return null;
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    const db = await mysql.createConnection(dbConfig);
+    // Get a connection from the pool
+    let conn;
 
     try {
         if (req.method === 'GET') {
             const pr = req.query.pr as string;
+
+            if (!pr) {
+                logger.warn('PR parameter missing');
+                return res.status(400).json({ error: 'PR parameter is required' });
+            }
+
             logger.info('Fetching progress for PR:', pr);
-            const [rows]: mysql.RowDataPacket[] = await db.execute('SELECT * FROM PR_Tracker WHERE PR = ?', [pr]);
+            conn = await pool.getConnection();
+
+            const [rows] = await conn.execute<mysql.RowDataPacket[]>(
+                'SELECT * FROM PR_Tracker WHERE PR = ?',
+                [pr]
+            );
+
             if (rows.length > 0) {
                 logger.info('Progress fetched:', rows[0]);
-                res.status(200).json(rows[0]);
+                return res.status(200).json(rows[0]);
             } else {
-                res.status(404).send('PR not found');
+                logger.info('PR not found:', pr);
+                return res.status(404).json({ error: 'PR not found' });
             }
-        } else if (req.method === 'POST') {
+        }
+        else if (req.method === 'POST') {
             const { pr, progress, state } = req.body;
 
-            if (!pr || !progress || !state) {
-                logger.warn('Invalid request payload:', req.body);
-                return res.status(400).send('Invalid request payload');
+            // Validate input
+            const validationError = validatePRData(pr, progress, state);
+            if (validationError) {
+                logger.warn('Validation error:', validationError, req.body);
+                return res.status(400).json({ error: validationError });
             }
 
-            // Clear existing debounce timeout if any
-            clearTimeout(debounceTimeout);
+            logger.info(`Updating progress for PR: ${pr} with progress: ${progress} and state: ${state}`);
+            conn = await pool.getConnection();
 
-            // Debounce the update operation to avoid multiple rapid requests
-            debounceTimeout = setTimeout(async () => {
-                try {
-                    logger.info(`Updating progress for PR: ${pr} with progress: ${progress} and state: ${state}`);
-                    await db.execute(
-                        `INSERT INTO PR_Tracker (PR, Progress, State)
-                         VALUES (?, ?, ?)
-                         ON DUPLICATE KEY UPDATE Progress = VALUES(Progress), State = VALUES(State)`,
-                        [pr, progress, state]
-                    );
-                    logger.info('Progress updated successfully for PR:', pr);
-                    res.status(200).send('Progress updated');
-                } catch (error) {
-                    logger.error('Error updating progress:', error);
-                    res.status(500).send('Failed to update progress');
-                }
-            }, 1000);
-        } else {
+            // Use a transaction for atomicity
+            await conn.beginTransaction();
+
+            try {
+                await conn.execute(
+                    `INSERT INTO PR_Tracker (PR, Progress, State)
+                     VALUES (?, ?, ?)
+                     ON DUPLICATE KEY UPDATE 
+                         Progress = VALUES(Progress),
+                         State = VALUES(State)`,
+                    [pr, progress, state]
+                );
+
+                await conn.commit();
+                logger.info('Progress updated successfully for PR:', pr);
+                return res.status(200).json({ message: 'Progress updated successfully' });
+            } catch (error) {
+                await conn.rollback();
+                throw error;
+            }
+        }
+        else {
             logger.warn('Method not allowed:', req.method);
-            res.status(405).send('Method Not Allowed');
+            return res.status(405).json({ error: 'Method Not Allowed' });
         }
     } catch (error) {
         logger.error('Error handling request:', error);
-        res.status(500).send('Internal Server Error');
+        return res.status(500).json({
+            error: 'Internal Server Error',
+            message: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     } finally {
-        await db.end();
+        if (conn) {
+            conn.release(); // Release the connection back to the pool
+        }
     }
 }
