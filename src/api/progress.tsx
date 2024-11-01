@@ -1,4 +1,4 @@
-import { NextApiRequest, NextApiResponse } from 'next';
+import { NextRequest, NextResponse } from 'next/server';
 import * as mysql from 'mysql2/promise';
 import winston from 'winston';
 
@@ -23,32 +23,36 @@ const dbConfig = {
     port: 3307
 };
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export const config = {
+    runtime: 'edge',
+};
+
+export default async function handler(req: NextRequest) {
     const db = await mysql.createConnection(dbConfig);
 
     try {
         if (req.method === 'GET') {
-            const pr = req.query.pr as string;
+            const pr = req.nextUrl.searchParams.get('pr');
             logger.info('Fetching progress for PR:', pr);
             const [rows]: any[] = await db.execute('SELECT * FROM PR_Tracker WHERE PR = ?', [pr]);
             logger.info('Progress fetched:', rows[0]);
-            res.status(200).json(rows[0]);
+            return NextResponse.json(rows[0]);
         } else if (req.method === 'POST') {
-            const { pr, progress, state } = req.body;
+            const { pr, progress, state } = await req.json();
             logger.info('Updating progress for PR:', pr, 'with progress:', progress, 'and state:', state);
             await db.execute(
                 'INSERT INTO PR_Tracker (PR, Progress, State) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Progress = ?, State = ?',
                 [pr, progress, state, progress, state]
             );
             logger.info('Progress updated for PR:', pr);
-            res.status(200).send('Progress updated');
+            return new NextResponse('Progress updated', { status: 200 });
         } else {
             logger.warn('Method not allowed:', req.method);
-            res.status(405).send('Method Not Allowed');
+            return new NextResponse('Method Not Allowed', { status: 405 });
         }
     } catch (error) {
         logger.error('Error handling request:', error);
-        res.status(500).send('Internal Server Error');
+        return new NextResponse('Internal Server Error', { status: 500 });
     } finally {
         await db.end();
     }

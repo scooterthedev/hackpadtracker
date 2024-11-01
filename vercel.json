@@ -2,6 +2,10 @@
   "version": 2,
   "builds": [
     {
+      "src": "src/api/progress.tsx",
+      "use": "@vercel/edge-functions"
+    },
+    {
       "src": "package.json",
       "use": "@vercel/static-build",
       "config": {
