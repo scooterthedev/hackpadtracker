@@ -129,7 +129,7 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
 
     const result = await withTransaction(async (client) => {
         const { rows } = await client.query(
-            'SELECT pr, progress, state FROM PR_Tracker WHERE pr = $1',
+            'SELECT pr, progress, state FROM pr_tracker WHERE pr = $1',
             [pr]
         );
         return rows[0];
@@ -161,12 +161,12 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
         try {
             await withTransaction(async (client) => {
                 await client.query(
-                    `INSERT INTO PR_Tracker (pr, progress, state)
+                    `INSERT INTO pr_tracker (pr, progress, state)
                      VALUES ($1, $2, $3)
-                     ON CONFLICT (pr) 
-                     DO UPDATE SET 
-                         progress = EXCLUDED.progress,
-                         state = EXCLUDED.state,`,
+                     ON CONFLICT (pr)
+                         DO UPDATE SET
+                                       progress = EXCLUDED.progress,
+                                       state = EXCLUDED.state`,
                     [pr, progress, state]
                 );
             });
