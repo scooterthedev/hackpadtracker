@@ -7,7 +7,6 @@ import LoginModal from './components/LoginModal';
 import { isValidGitHubPRUrl } from './utils/validation';
 import { savePRProgress, getPRProgress } from './utils/storage';
 import Cookies from 'js-cookie';
-import { Analytics } from "@vercel/analytics/react"
 
 function App() {
   const [prUrl, setPrUrl] = useState('');
@@ -174,7 +173,6 @@ function App() {
   };
 
   return (
-      <Analytics>
         <Routes>
         <Route path="/callback" element={<div>Handling OAuth callback...</div>} />
         <Route path="/" element={
@@ -298,7 +296,6 @@ function App() {
           </div>
         } />
         </Routes>
-      </Analytics>
 );
 }
 
