@@ -119,7 +119,7 @@ useEffect(() => {
                         },
                         body: new URLSearchParams({
                             client_id: '2210535565.7957522136834',
-                            client_secret: import.meta.env.VITE_CODE,
+                            client_secret: "73271bfeae65d8281541c9802507f364",
                             code,
                             redirect_uri: 'https://hackpadtracker.vercel.app/callback',
                         }),
