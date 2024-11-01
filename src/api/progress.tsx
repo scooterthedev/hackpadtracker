@@ -21,7 +21,6 @@ const dbConfig = {
     password: '9a25926ccb8d15c44c2dee92f217eb21e3fd9712',
     database: 'PRTracker_telephone',
     port: 3307,
-    // Connection pool settings
     pool: {
         min: 0,
         max: 10,
@@ -105,22 +104,24 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
     }
 
     const timeout = setTimeout(async () => {
+        let connection;
         try {
             logger.info('Updating progress for PR:', pr, 'with progress:', progress, 'and state:', state);
 
-            await withConnection(async (connection) => {
-                await connection.execute(
-                    'INSERT INTO PR_Tracker (PR, Progress, State) VALUES (?, ?, ?) ' +
-                    'ON DUPLICATE KEY UPDATE Progress = VALUES(Progress), State = VALUES(State)',
-                    [pr, progress, state]
-                );
-            });
+            connection = await pool.getConnection();
+            await connection.execute(
+                'INSERT INTO PR_Tracker (PR, Progress, State) VALUES (?, ?, ?) ' +
+                'ON DUPLICATE KEY UPDATE Progress = VALUES(Progress), State = VALUES(State)',
+                [pr, progress, state]
+            );
 
             logger.info('Progress updated for PR:', pr);
             debounceTimeouts.delete(pr);
         } catch (error) {
             logger.error('Error updating progress:', error);
             throw error;
+        } finally {
+            if (connection) connection.release();
         }
     }, 1000);
 
