@@ -15,7 +15,6 @@ const logger = winston.createLogger({
     ]
 });
 
-// Database configuration
 const dbConfig = {
     host: '9burt.h.filess.io',
     user: 'PRTracker_telephone',
@@ -32,13 +31,10 @@ const dbConfig = {
     waitForConnections: true
 };
 
-// Create a connection pool instead of single connections
 const pool = mysql.createPool(dbConfig);
 
-// Debounce map to handle multiple requests for the same PR
 const debounceTimeouts: Map<string, NodeJS.Timeout> = new Map();
 
-// Helper function to handle database operations with proper error handling
 async function withConnection<T>(
     operation: (connection: mysql.PoolConnection) => Promise<T>
 ): Promise<T> {
@@ -103,13 +99,11 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
         return;
     }
 
-    // Clear existing timeout for this PR if it exists
     const existingTimeout = debounceTimeouts.get(pr);
     if (existingTimeout) {
         clearTimeout(existingTimeout);
     }
 
-    // Create new debounced update
     const timeout = setTimeout(async () => {
         try {
             logger.info('Updating progress for PR:', pr, 'with progress:', progress, 'and state:', state);
@@ -134,7 +128,6 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
     res.status(202).json({ message: 'Update scheduled' });
 }
 
-// Cleanup function for serverless environment
 process.on('SIGTERM', async () => {
     logger.info('SIGTERM received, cleaning up...');
     for (const timeout of debounceTimeouts.values()) {
