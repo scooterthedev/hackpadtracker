@@ -32,7 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (req.method === 'GET') {
             const pr = req.query.pr as string;
             logger.info('Fetching progress for PR:', pr);
-            const [rows]: any[] = await db.execute('SELECT * FROM PR_Tracker WHERE PR = ?', [pr]);
+            const [rows]: mysql.RowDataPacket[] = await db.execute('SELECT * FROM PR_Tracker WHERE PR = ?', [pr]);
             if (rows.length > 0) {
                 logger.info('Progress fetched:', rows[0]);
                 res.status(200).json(rows[0]);
@@ -41,6 +41,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
         } else if (req.method === 'POST') {
             const { pr, progress, state } = req.body;
+
+            if (!pr || !progress || !state) {
+                logger.warn('Invalid request payload:', req.body);
+                return res.status(400).send('Invalid request payload');
+            }
 
             // Clear existing debounce timeout if any
             clearTimeout(debounceTimeout);
