@@ -23,8 +23,8 @@
       "dest": "https://slack.com/$1"
     },
     {
-      "src": "/callback/",
-      "dest": "https://hackpadtracker-eta.vercel.app/callback"
+      "src": "/callback",
+      "dest": "/"
     }
   ]
 }
