@@ -16,7 +16,7 @@
   "routes": [
     {
       "src": "/api/progress",
-      "dest": "/api/progress.js"
+      "dest": "/api/progress.tsx"
     },
     {
       "src": "/api/slack/(.*)",
