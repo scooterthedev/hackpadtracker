@@ -1,5 +1,6 @@
 import mysql from "mysql";
 import winston from "winston";
+import { Request, Response } from "express";
 
 // Configure winston logger
 const logger = winston.createLogger({
@@ -22,7 +23,7 @@ const db = mysql.createConnection({
     port: 3307
 });
 
-db.connect(function (err) {
+db.connect((err: mysql.MysqlError | null) => {
     if (err) {
         logger.error('Error connecting to MySQL:', err);
         throw err;
@@ -30,11 +31,11 @@ db.connect(function (err) {
     logger.info('MySQL connected...');
 });
 
-export default (req, res) => {
+const handler = (req: Request, res: Response): void => {
     logger.info(`Received ${req.method} request for PR: ${req.query.pr || req.body.pr}`);
 
     if (req.method === 'GET') {
-        const pr = req.query.pr;
+        const pr = req.query.pr as string;
         logger.info('Fetching progress for PR:', pr);
         db.query('SELECT * FROM PR_Tracker WHERE PR = ?', [pr], (err, result) => {
             if (err) {
@@ -46,19 +47,25 @@ export default (req, res) => {
             res.status(200).json(result[0]);
         });
     } else if (req.method === 'POST') {
-        const { pr, progress, state } = req.body;
+        const { pr, progress, state } = req.body as { pr: string; progress: string; state: string };
         logger.info('Updating progress for PR:', pr, 'with progress:', progress, 'and state:', state);
-        db.query('INSERT INTO PR_Tracker (PR, Progress, State) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Progress = ?, State = ?', [pr, progress, state, progress, state], (err, result) => {
-            if (err) {
-                logger.error('Error updating progress:', err);
-                res.status(500).json({ error: 'Internal Server Error' });
-                return;
+        db.query(
+            'INSERT INTO PR_Tracker (PR, Progress, State) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Progress = ?, State = ?',
+            [pr, progress, state, progress, state],
+            (err) => {
+                if (err) {
+                    logger.error('Error updating progress:', err);
+                    res.status(500).json({ error: 'Internal Server Error' });
+                    return;
+                }
+                logger.info('Progress updated for PR:', pr);
+                res.status(200).send('Progress updated');
             }
-            logger.info('Progress updated for PR:', pr);
-            res.status(200).send('Progress updated');
-        });
+        );
     } else {
         logger.warn('Method not allowed:', req.method);
         res.status(405).send('Method Not Allowed');
     }
 };
+
+export default handler;
