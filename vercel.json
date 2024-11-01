@@ -3,7 +3,7 @@
   "builds": [
     {
       "src": "src/api/progress.tsx",
-      "use": "@vercel/edge-functions"
+      "use": "@vercel/node"
     },
     {
       "src": "package.json",
