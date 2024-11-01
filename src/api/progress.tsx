@@ -4,7 +4,7 @@ import winston from 'winston';
 import { z } from 'zod';
 
 const logger = winston.createLogger({
-    level: process.env.LOG_LEVEL || 'info',
+    level: 'info',
     format: winston.format.combine(
         winston.format.timestamp(),
         winston.format.errors({ stack: true }),
@@ -27,10 +27,7 @@ const PostRequestSchema = z.object({
 });
 
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL || "postgresql://PR_Tracker_owner:JGAnwKy8kZY2@ep-cold-cell-a51c5kj8.us-east-2.aws.neon.tech/PR_Tracker?sslmode=require",
-    ssl: {
-        rejectUnauthorized: true
-    },
+    connectionString: "postgresql://PR_Tracker_owner:JGAnwKy8kZY2@ep-cold-cell-a51c5kj8.us-east-2.aws.neon.tech:3007/PR_Tracker?sslmode=require",
     max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 2000
