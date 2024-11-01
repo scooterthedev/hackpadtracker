@@ -3,13 +3,6 @@ import { Pool, PoolClient } from 'pg';
 import winston from 'winston';
 import { z } from 'zod';
 
-const requiredEnvVars = ['DATABASE_URL'];
-for (const envVar of requiredEnvVars) {
-    if (!process.env[envVar]) {
-        throw new Error(`Missing required environment variable: ${envVar}`);
-    }
-}
-
 const logger = winston.createLogger({
     level: process.env.LOG_LEVEL || 'info',
     format: winston.format.combine(
@@ -34,7 +27,7 @@ const PostRequestSchema = z.object({
 });
 
 const pool = new Pool({
-    connectionString: "postgresql://PR_Tracker_owner:JGAnwKy8kZY2@ep-cold-cell-a51c5kj8.us-east-2.aws.neon.tech/PR_Tracker?sslmode=require",
+    connectionString: process.env.DATABASE_URL || "postgresql://PR_Tracker_owner:JGAnwKy8kZY2@ep-cold-cell-a51c5kj8.us-east-2.aws.neon.tech/PR_Tracker?sslmode=require",
     ssl: {
         rejectUnauthorized: true
     },
@@ -51,16 +44,32 @@ interface DatabaseOperation<T> {
 
 async function withTransaction<T>(operation: DatabaseOperation<T>): Promise<T> {
     const client = await pool.connect();
+    logger.debug('Database connection established');
+    
     try {
         await client.query('BEGIN');
+        logger.debug('Transaction started');
+        
         const result = await operation(client);
+        
         await client.query('COMMIT');
+        logger.debug('Transaction committed');
+        
         return result;
     } catch (error) {
+        logger.error('Transaction error', {
+            error,
+            errorMessage: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined
+        });
+        
         await client.query('ROLLBACK');
+        logger.debug('Transaction rolled back');
+        
         throw error;
     } finally {
         client.release();
+        logger.debug('Database connection released');
     }
 }
 
@@ -120,26 +129,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 async function handleGet(req: VercelRequest, res: VercelResponse) {
     const pr = req.query.pr as string;
     if (!pr) {
+        logger.warn('Missing PR parameter in GET request');
         res.status(400).json({ error: 'PR query parameter is required' });
         return;
     }
 
     logger.info('Fetching progress', { pr });
 
-    const result = await withTransaction(async (client) => {
-        const { rows } = await client.query(
-            'SELECT pr, progress, state FROM pr_tracker WHERE pr = $1',
-            [pr]
-        );
-        return rows[0];
-    });
+    try {
+        const result = await withTransaction(async (client) => {
+            logger.debug('Executing database query', { pr });
+            const { rows } = await client.query(
+                'SELECT pr, progress, state FROM pr_tracker WHERE pr = $1',
+                [pr]
+            );
+            logger.debug('Query results', { rowCount: rows.length });
+            return rows[0];
+        });
 
-    if (!result) {
-        res.status(404).json({ error: 'PR not found' });
-        return;
+        if (!result) {
+            logger.info('PR not found', { pr });
+            res.status(404).json({ error: 'PR not found' });
+            return;
+        }
+
+        logger.info('Successfully retrieved PR progress', { pr, result });
+        res.status(200).json(result);
+    } catch (error) {
+        logger.error('Database error in handleGet', {
+            error,
+            pr,
+            errorMessage: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined
+        });
+        res.status(500).json({ 
+            error: 'Internal Server Error',
+            message: 'Failed to fetch PR progress'
+        });
     }
-
-    res.status(200).json(result);
 }
 
 async function handlePost(req: VercelRequest, res: VercelResponse) {
