@@ -27,9 +27,10 @@ const dbConfig = {
 let debounceTimeout: NodeJS.Timeout;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    const db = await mysql.createConnection(dbConfig);
-
+    let db;
     try {
+        db = await mysql.createConnection(dbConfig);
+
         if (req.method === 'GET') {
             const pr = req.query.pr as string;
             logger.info('Fetching progress for PR:', pr);
@@ -40,13 +41,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const { pr, progress, state } = req.body;
             clearTimeout(debounceTimeout);
             debounceTimeout = setTimeout(async () => {
-                logger.info('Updating progress for PR:', pr, 'with progress:', progress, 'and state:', state);
-                await db.execute(
-                    'INSERT INTO PR_Tracker (PR, Progress, State) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Progress = VALUES(Progress), State = VALUES(State)',
-                    [pr, progress, state]
-                );
-                logger.info('Progress updated for PR:', pr);
-                res.status(200).send('Progress updated');
+                try {
+                    if (!db) {
+                        db = await mysql.createConnection(dbConfig);
+                    }
+                    logger.info('Updating progress for PR:', pr, 'with progress:', progress, 'and state:', state);
+                    await db.execute(
+                        'INSERT INTO PR_Tracker (PR, Progress, State) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Progress = VALUES(Progress), State = VALUES(State)',
+                        [pr, progress, state]
+                    );
+                    logger.info('Progress updated for PR:', pr);
+                    res.status(200).send('Progress updated');
+                } catch (error) {
+                    logger.error('Error updating progress:', error);
+                    res.status(500).send('Internal Server Error');
+                } finally {
+                    if (db) {
+                        await db.end();
+                    }
+                }
             }, 1000); // Adjust the debounce delay as needed
         } else {
             logger.warn('Method not allowed:', req.method);
@@ -56,6 +69,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         logger.error('Error handling request:', error);
         res.status(500).send('Internal Server Error');
     } finally {
-        await db.end();
+        if (db) {
+            await db.end();
+        }
     }
 }
