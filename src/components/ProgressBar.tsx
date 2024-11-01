@@ -1,13 +1,29 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+import { savePRProgress } from '../utils/storage';
 
 interface ProgressBarProps {
   progress: number;
+  prUrl: string;
+  currentStage: string;
 }
 
-const ProgressBar: React.FC<ProgressBarProps> = ({ progress }) => {
-  // Create 10 segments
+const ProgressBar: React.FC<ProgressBarProps> = ({ progress, prUrl, currentStage }) => {
   const totalSegments = 10;
   const completedSegments = Math.floor((progress / 100) * totalSegments);
+  const previousProgress = useRef(progress);
+
+  useEffect(() => {
+    const checkProgress = async () => {
+      if (previousProgress.current === progress) {
+        await savePRProgress(prUrl, progress, currentStage);
+      }
+      previousProgress.current = progress;
+    };
+
+    const timeoutId = setTimeout(checkProgress, 1000);
+
+    return () => clearTimeout(timeoutId);
+  }, [progress, prUrl, currentStage]);
 
   return (
     <div className="relative pt-1">

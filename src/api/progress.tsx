@@ -41,8 +41,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             debounceTimeout = setTimeout(async () => {
                 logger.info('Updating progress for PR:', pr, 'with progress:', progress, 'and state:', state);
                 await db.execute(
-                    'INSERT INTO PR_Tracker (PR, Progress, State) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Progress = ?, State = ?',
-                    [pr, progress, state, progress, state]
+                    'INSERT INTO PR_Tracker (PR, Progress, State) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Progress = VALUES(Progress), State = VALUES(State)',
+                    [pr, progress, state]
                 );
                 logger.info('Progress updated for PR:', pr);
                 res.status(200).send('Progress updated');
