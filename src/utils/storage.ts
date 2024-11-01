@@ -15,11 +15,11 @@ const logger = winston.createLogger({
     ]
 });
 
-const pool = new Pool({
+export const pool = new Pool({
     connectionString: "postgresql://PR_Tracker_owner:JGAnwKy8kZY2@ep-cold-cell-a51c5kj8.us-east-2.aws.neon.tech:3007/PR_Tracker?sslmode=require",
     max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000
+    idleTimeoutMillis: 60000,
+    connectionTimeoutMillis: 5000
 });
 
 // Log pool events
@@ -46,6 +46,22 @@ pool.on('remove', () => {
         waitingClients: pool.waitingCount
     });
 });
+
+export const withRetry = async <T>(operation: () => Promise<T>, maxRetries = 3): Promise<T> => {
+    let lastError;
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            return await operation();
+        } catch (error) {
+            lastError = error;
+            if (i < maxRetries - 1) {
+                const delay = Math.min(1000 * Math.pow(2, i), 5000);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+    }
+    throw lastError;
+};
 
 function extractPRNumber(prUrl: string): string {
     const matches = prUrl.match(/\/pull\/(\d+)/);
