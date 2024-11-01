@@ -34,7 +34,7 @@ export default async function handler(req: NextRequest) {
         if (req.method === 'GET') {
             const pr = req.nextUrl.searchParams.get('pr');
             logger.info('Fetching progress for PR:', pr);
-            const [rows]: [any[]] = await db.execute('SELECT * FROM PR_Tracker WHERE PR = ?', [pr]);
+            const [rows]: any[] = await db.execute('SELECT * FROM PR_Tracker WHERE PR = ?', [pr]);
             logger.info('Progress fetched:', rows[0]);
             return NextResponse.json(rows[0]);
         } else if (req.method === 'POST') {
