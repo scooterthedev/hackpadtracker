@@ -7,16 +7,12 @@
       "config": {
         "distDir": "dist"
       }
-    },
-    {
-      "src": "src/api/progress.ts",
-      "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/api/progress",
-      "dest": "/api/progress.ts"
+      "dest": "/api/progress.tsx"
     },
     {
       "src": "/api/slack/(.*)",

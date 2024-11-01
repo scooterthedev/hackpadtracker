@@ -22,7 +22,7 @@ export default defineConfig({
       '/api/progress': {
         target: 'https://hackpadtracker-eta.vercel.app',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/progress/, '/api/progress.ts')
+        rewrite: (path) => path.replace(/^\/api\/progress/, '/api/progress.tsx')
       }
     },
   },
