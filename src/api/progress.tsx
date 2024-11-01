@@ -1,4 +1,3 @@
-
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import * as mysql from 'mysql2/promise';
 import winston from 'winston';
@@ -16,69 +15,130 @@ const logger = winston.createLogger({
     ]
 });
 
+// Database configuration
 const dbConfig = {
     host: '9burt.h.filess.io',
     user: 'PRTracker_telephone',
     password: '9a25926ccb8d15c44c2dee92f217eb21e3fd9712',
     database: 'PRTracker_telephone',
-    port: 3307
+    port: 3307,
+    // Connection pool settings
+    pool: {
+        min: 0,
+        max: 10,
+        acquire: 30000,
+        idle: 10000
+    },
+    waitForConnections: true
 };
 
-let debounceTimeout: NodeJS.Timeout;
+// Create a connection pool instead of single connections
+const pool = mysql.createPool(dbConfig);
+
+// Debounce map to handle multiple requests for the same PR
+const debounceTimeouts: Map<string, NodeJS.Timeout> = new Map();
+
+// Helper function to handle database operations with proper error handling
+async function withConnection<T>(
+    operation: (connection: mysql.PoolConnection) => Promise<T>
+): Promise<T> {
+    const connection = await pool.getConnection();
+    try {
+        return await operation(connection);
+    } finally {
+        connection.release();
+    }
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    let db: mysql.Connection | undefined;
     try {
-        db = await mysql.createConnection(dbConfig);
-
         if (req.method === 'GET') {
-            const pr = req.query.pr as string;
-            if (!pr) {
-                res.status(400).send('PR query parameter is required');
-                return;
-            }
-            logger.info('Fetching progress for PR:', pr);
-            const [rows]: any[] = await db.execute('SELECT * FROM PR_Tracker WHERE PR = ?', [pr]);
-            logger.info('Progress fetched:', rows[0]);
-            res.status(200).json(rows[0]);
+            await handleGet(req, res);
         } else if (req.method === 'POST') {
-            const { pr, progress, state } = req.body;
-            if (!pr || !progress || !state) {
-                res.status(400).send('PR, progress, and state are required');
-                return;
-            }
-            clearTimeout(debounceTimeout);
-            debounceTimeout = setTimeout(async () => {
-                try {
-                    if (!db) {
-                        db = await mysql.createConnection(dbConfig);
-                    }
-                    logger.info('Updating progress for PR:', pr, 'with progress:', progress, 'and state:', state);
-                    await db.execute(
-                        'INSERT INTO PR_Tracker (PR, Progress, State) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Progress = VALUES(Progress), State = VALUES(State)',
-                        [pr, progress, state]
-                    );
-                    logger.info('Progress updated for PR:', pr);
-                    res.status(200).send('Progress updated');
-                } catch (error) {
-                    logger.error('Error updating progress:', error);
-                    res.status(500).send('Internal Server Error');
-                } finally {
-                    if (db) {
-                        await db.end();
-                    }
-                }
-            }, 1000); // Adjust the debounce delay as needed
+            await handlePost(req, res);
         } else {
             logger.warn('Method not allowed:', req.method);
             res.status(405).send('Method Not Allowed');
         }
     } catch (error) {
         logger.error('Error handling request:', error);
-        res.status(500).send('Internal Server Error');
-    } finally {
-        if (db) {
-            await db.end();
-        }
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: error instanceof Error ? error.message : 'Unknown error'
+        });
     }
 }
+
+async function handleGet(req: VercelRequest, res: VercelResponse) {
+    const pr = req.query.pr as string;
+    if (!pr) {
+        res.status(400).json({ error: 'PR query parameter is required' });
+        return;
+    }
+
+    logger.info('Fetching progress for PR:', pr);
+
+    try {
+        const result = await withConnection(async (connection) => {
+            const [rows] = await connection.execute(
+                'SELECT * FROM PR_Tracker WHERE PR = ?',
+                [pr]
+            );
+            return rows;
+        });
+
+        const progress = Array.isArray(result) ? result[0] : null;
+        logger.info('Progress fetched:', progress);
+        res.status(200).json(progress || { error: 'PR not found' });
+    } catch (error) {
+        logger.error('Error fetching progress:', error);
+        throw error;
+    }
+}
+
+async function handlePost(req: VercelRequest, res: VercelResponse) {
+    const { pr, progress, state } = req.body;
+    if (!pr || !progress || !state) {
+        res.status(400).json({ error: 'PR, progress, and state are required' });
+        return;
+    }
+
+    // Clear existing timeout for this PR if it exists
+    const existingTimeout = debounceTimeouts.get(pr);
+    if (existingTimeout) {
+        clearTimeout(existingTimeout);
+    }
+
+    // Create new debounced update
+    const timeout = setTimeout(async () => {
+        try {
+            logger.info('Updating progress for PR:', pr, 'with progress:', progress, 'and state:', state);
+
+            await withConnection(async (connection) => {
+                await connection.execute(
+                    'INSERT INTO PR_Tracker (PR, Progress, State) VALUES (?, ?, ?) ' +
+                    'ON DUPLICATE KEY UPDATE Progress = VALUES(Progress), State = VALUES(State)',
+                    [pr, progress, state]
+                );
+            });
+
+            logger.info('Progress updated for PR:', pr);
+            debounceTimeouts.delete(pr);
+        } catch (error) {
+            logger.error('Error updating progress:', error);
+            throw error;
+        }
+    }, 1000);
+
+    debounceTimeouts.set(pr, timeout);
+    res.status(202).json({ message: 'Update scheduled' });
+}
+
+// Cleanup function for serverless environment
+process.on('SIGTERM', async () => {
+    logger.info('SIGTERM received, cleaning up...');
+    for (const timeout of debounceTimeouts.values()) {
+        clearTimeout(timeout);
+    }
+    await pool.end();
+});
