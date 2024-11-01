@@ -34,7 +34,7 @@ const PostRequestSchema = z.object({
 });
 
 const pool = new Pool({
-    connectionString: "ep-ancient-hall-a50cnz7s.us-east-2.aws.neon.tech",
+    connectionString: "postgresql://PR_Tracker_owner:JGAnwKy8kZY2@ep-cold-cell-a51c5kj8.us-east-2.aws.neon.tech/PR_Tracker?sslmode=require",
     ssl: {
         rejectUnauthorized: true
     },
