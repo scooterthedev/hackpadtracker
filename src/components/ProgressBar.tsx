@@ -1,47 +1,29 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import axios from 'axios';
+import React, { useEffect, useRef } from 'react';
+import { savePRProgress } from '../utils/storage';
 
 interface ProgressBarProps {
   progress: number;
   prUrl: string;
-  isAdmin: boolean;
-  stages: string[];
+  currentStage: string;
 }
 
-const ProgressBar: React.FC<ProgressBarProps> = ({ progress, prUrl, isAdmin, stages }) => {
-  const [currentProgress, setCurrentProgress] = useState(progress);
-
-  const debounce = (func: (...args: unknown[]) => void, wait: number) => {
-    let timeout: NodeJS.Timeout;
-    return (...args: unknown[]) => {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => func(...args), wait);
-    };
-  };
-
-  const savePRProgress = async (prUrl: string, progress: number, currentStage: string): Promise<void> => {
-    const pr = extractPRNumber(prUrl);
-    await axios.post('/api/progress', { pr, progress, state: currentStage });
-  };
-
-  const extractPRNumber = (prUrl: string): number => {
-    const match = prUrl.match(/\/pull\/(\d+)/);
-    return match ? parseInt(match[1], 10) : 0;
-  };
-
-  const debouncedSavePRProgress = useCallback(debounce((prUrl: string, newProgress: number, newStage: string) => {
-    savePRProgress(prUrl, newProgress, newStage);
-  }, 1000), [savePRProgress]);
+const ProgressBar: React.FC<ProgressBarProps> = ({ progress, prUrl, currentStage }) => {
+  const totalSegments = 10;
+  const completedSegments = Math.floor((progress / 100) * totalSegments);
+  const previousProgress = useRef(progress);
 
   useEffect(() => {
-    if (isAdmin) {
-      const newStage = stages[Math.floor((currentProgress / 100) * (stages.length - 1))];
-      debouncedSavePRProgress(currentProgress, newStage);
-    }
-  }, [currentProgress, isAdmin, stages]);
+    const checkProgress = async () => {
+      if (previousProgress.current === progress) {
+        await savePRProgress(prUrl, progress, currentStage);
+      }
+      previousProgress.current = progress;
+    };
 
-  const totalSegments = 10;
-  const completedSegments = Math.floor((currentProgress / 100) * totalSegments);
+    const timeoutId = setTimeout(checkProgress, 1000);
+
+    return () => clearTimeout(timeoutId);
+  }, [progress, prUrl, currentStage]);
 
   return (
       <div className="relative pt-1">
