@@ -149,7 +149,10 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
 
         if (!result) {
             logger.info('PR not found', { pr });
-            res.status(404).json({ error: 'PR not found' });
+            res.status(404).json({ 
+                error: 'PR not found',
+                message: `No progress data found for PR: ${pr}`
+            });
             return;
         }
 
@@ -162,9 +165,12 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
             errorMessage: error instanceof Error ? error.message : 'Unknown error',
             stack: error instanceof Error ? error.stack : undefined
         });
+        
+        const errorMessage = error instanceof Error ? error.message : 'Unknown database error';
         res.status(500).json({ 
             error: 'Internal Server Error',
-            message: 'Failed to fetch PR progress'
+            message: 'Failed to fetch PR progress',
+            details: errorMessage
         });
     }
 }
