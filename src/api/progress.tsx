@@ -16,11 +16,11 @@ const logger = winston.createLogger({
 });
 
 const dbConfig = {
-    host: import.meta.env.VITE_HOST,
-    user: import.meta.env.VITE_USER,
-    password: import.meta.env.VITE_PASSWORD,
-    database: import.meta.env.VITE_DATABASE,
-    port: import.meta.env.VITE_PORT
+    host: process.env.VITE_HOST,
+    user: process.env.VITE_USER,
+    password: process.env.VITE_PASSWORD,
+    database: process.env.VITE_DATABASE,
+    port: process.env.VITE_PORT
 };
 
 let debounceTimeout: NodeJS.Timeout;
