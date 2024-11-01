@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
 
 interface ProgressBarProps {
@@ -8,9 +8,10 @@ interface ProgressBarProps {
   stages: string[];
 }
 
-const ProgressBar: React.FC<ProgressBarProps> = ({ progress}) => {
-  const [currentProgress] = useState(progress);
-    const debounce = (func: (...args: unknown[]) => void, wait: number) => {
+const ProgressBar: React.FC<ProgressBarProps> = ({ progress, prUrl, isAdmin, stages }) => {
+  const [currentProgress, setCurrentProgress] = useState(progress);
+
+  const debounce = (func: (...args: unknown[]) => void, wait: number) => {
     let timeout: NodeJS.Timeout;
     return (...args: unknown[]) => {
       clearTimeout(timeout);
@@ -28,33 +29,39 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ progress}) => {
     return match ? parseInt(match[1], 10) : 0;
   };
 
-  const debouncedSavePRProgress = useCallback(debounce((prUrl: string, newProgress: number, newStage: string) => {
+  const debouncedSavePRProgress = useCallback(debounce((newProgress: number, newStage: string) => {
     savePRProgress(prUrl, newProgress, newStage);
-  }, 1000), []);
+  }, 1000), [prUrl]);
 
-  // Create 10 segments
+  useEffect(() => {
+    if (isAdmin) {
+      const newStage = stages[Math.floor((currentProgress / 100) * (stages.length - 1))];
+      debouncedSavePRProgress(currentProgress, newStage);
+    }
+  }, [currentProgress, isAdmin, stages]);
+
   const totalSegments = 10;
   const completedSegments = Math.floor((currentProgress / 100) * totalSegments);
 
   return (
-    <div className="relative pt-1">
-      <div className="flex gap-1.5">
-        {Array.from({ length: totalSegments }).map((_, index) => (
-          <div
-            key={index}
-            className={`
+      <div className="relative pt-1">
+        <div className="flex gap-1.5">
+          {Array.from({ length: totalSegments }).map((_, index) => (
+              <div
+                  key={index}
+                  className={`
               h-4 flex-1 rounded-sm
               ${index < completedSegments
-                ? 'bg-gradient-to-r from-blue-400 to-blue-500 shadow-lg shadow-blue-500/30'
-                : 'bg-gray-700/50 border border-gray-700'
-              }
+                      ? 'bg-gradient-to-r from-blue-400 to-blue-500 shadow-lg shadow-blue-500/30'
+                      : 'bg-gray-700/50 border border-gray-700'
+                  }
               ${index === completedSegments - 1 ? 'animate-pulse' : ''}
               transition-all duration-300 ease-in-out
             `}
-          />
-        ))}
+              />
+          ))}
+        </div>
       </div>
-    </div>
   );
 };
 

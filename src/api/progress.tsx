@@ -23,30 +23,36 @@ const dbConfig = {
     port: 3307
 };
 
-let debounceTimeout: NodeJS.Timeout;
+const requestMap: { [key: string]: number } = {};
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     const db = await mysql.createConnection(dbConfig);
 
     try {
+        const pr = req.query.pr as string;
+
+        // Rate-limiting: limit to one request per PR per 5 seconds
+        const currentTime = Date.now();
+        if (requestMap[pr] && currentTime - requestMap[pr] < 5000) {
+            return res.status(429).send('Too Many Requests');
+        }
+        requestMap[pr] = currentTime;
+
         if (req.method === 'GET') {
-            const pr = req.query.pr as string;
             logger.info('Fetching progress for PR:', pr);
             const [rows]: any[] = await db.execute('SELECT * FROM PR_Tracker WHERE PR = ?', [pr]);
             logger.info('Progress fetched:', rows[0]);
             res.status(200).json(rows[0]);
         } else if (req.method === 'POST') {
             const { pr, progress, state } = req.body;
-            clearTimeout(debounceTimeout);
-            debounceTimeout = setTimeout(async () => {
-                logger.info('Updating progress for PR:', pr, 'with progress:', progress, 'and state:', state);
-                await db.execute(
-                    'INSERT INTO PR_Tracker (PR, Progress, State) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Progress = ?, State = ?',
-                    [pr, progress, state, progress, state]
-                );
-                logger.info('Progress updated for PR:', pr);
-                res.status(200).send('Progress updated');
-            }, 1000);
+
+            logger.info('Updating progress for PR:', pr, 'with progress:', progress, 'and state:', state);
+            await db.execute(
+                'INSERT INTO PR_Tracker (PR, Progress, State) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Progress = ?, State = ?',
+                [pr, progress, state, progress, state]
+            );
+            logger.info('Progress updated for PR:', pr);
+            res.status(200).send('Progress updated');
         } else {
             logger.warn('Method not allowed:', req.method);
             res.status(405).send('Method Not Allowed');
