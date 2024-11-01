@@ -1,32 +1,26 @@
-interface PRProgress {
-  prUrl: string;
-  progress: number;
-  currentStage: string;
-  lastUpdated: number;
-}
+import axios from 'axios';
 
-const STORAGE_KEY = 'pr-progress-data';
-
-export const savePRProgress = (prUrl: string, progress: number, currentStage: string): void => {
-  const data = getPRProgressData();
-  data[prUrl] = {
-    prUrl,
-    progress,
-    currentStage,
-    lastUpdated: Date.now(),
-  };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+export const savePRProgress = async (prUrl: string, progress: number, currentStage: string): Promise<void> => {
+  const pr = extractPRNumber(prUrl);
+  await axios.post('/api/progress', { pr, progress, state: currentStage });
 };
 
-export const getPRProgressData = (): Record<string, PRProgress> => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-  } catch {
-    return {};
+export const getPRProgress = async (prUrl: string): Promise<PRProgress | null> => {
+  const pr = extractPRNumber(prUrl);
+  const response = await axios.get(`/api/progress?pr=${pr}`);
+  if (response.data) {
+    const { Progress, State } = response.data;
+    return {
+      prUrl,
+      progress: Progress,
+      currentStage: State,
+      lastUpdated: Date.now(),
+    };
   }
+  return null;
 };
 
-export const getPRProgress = (prUrl: string): PRProgress | null => {
-  const data = getPRProgressData();
-  return data[prUrl] || null;
+const extractPRNumber = (prUrl: string): number => {
+  const match = prUrl.match(/\/pull\/(\d+)/);
+  return match ? parseInt(match[1], 10) : 0;
 };

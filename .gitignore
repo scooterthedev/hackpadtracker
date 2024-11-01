@@ -26,3 +26,4 @@ dist-ssr
 certificates
 .vercel
 .env*.local
+/package-lock.json
