@@ -34,9 +34,9 @@ const PostRequestSchema = z.object({
 });
 
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: "postgresql://PR_Tracker_owner:JGAnwKy8kZY2@ep-cold-cell-a51c5kj8.us-east-2.aws.neon.tech/PR_Tracker?sslmode=require",
     ssl: {
-        rejectUnauthorized: process.env.NODE_ENV === 'production'
+        rejectUnauthorized: true
     },
     max: 20,
     idleTimeoutMillis: 30000,
