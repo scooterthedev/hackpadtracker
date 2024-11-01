@@ -30,7 +30,7 @@ db.connect(function (err) {
     logger.info('MySQL connected...');
 });
 
-module.exports = (req, res) => {
+export default (req, res) => {
     logger.info(`Received ${req.method} request for PR: ${req.query.pr || req.body.pr}`);
 
     if (req.method === 'GET') {
