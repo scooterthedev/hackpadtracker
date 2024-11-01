@@ -18,6 +18,7 @@
     "cors": "^2.8.5",
     "eslint-config-next": "^15.0.2",
     "express": "^4.21.1",
+    "fs": "^0.0.1-security",
     "http-proxy-middleware": "^3.0.3",
     "js-cookie": "^3.0.5",
     "lucide-react": "^0.344.0",

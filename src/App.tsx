@@ -8,6 +8,11 @@ import { isValidGitHubPRUrl } from './utils/validation';
 import { savePRProgress, getPRProgress } from './utils/storage';
 import Cookies from 'js-cookie';
 
+interface PRProgress {
+    progress: number;
+    currentStage: string;
+}
+
 function App() {
     const [prUrl, setPrUrl] = useState('');
     const [isValid, setIsValid] = useState(true);
@@ -28,10 +33,9 @@ function App() {
 
     const navigate = useNavigate();
 
-// Load saved progress when PR URL is submitted
 useEffect(() => {
     if (isSubmitted && prUrl) {
-        getPRProgress(prUrl).then((savedProgress: { progress: number; currentStage: string } | null) => {
+        getPRProgress(prUrl).then((savedProgress) => {
             if (savedProgress) {
                 setProgress(savedProgress.progress);
                 setCurrentStage(savedProgress.currentStage);
