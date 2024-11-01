@@ -29,9 +29,9 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ progress, prUrl, isAdmin, sta
     return match ? parseInt(match[1], 10) : 0;
   };
 
-  const debouncedSavePRProgress = useCallback(debounce((newProgress: number, newStage: string) => {
+  const debouncedSavePRProgress = useCallback(debounce((prUrl: string, newProgress: number, newStage: string) => {
     savePRProgress(prUrl, newProgress, newStage);
-  }, 1000), [prUrl]);
+  }, 1000), [savePRProgress]);
 
   useEffect(() => {
     if (isAdmin) {

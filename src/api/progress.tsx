@@ -23,36 +23,45 @@ const dbConfig = {
     port: 3307
 };
 
-const requestMap: { [key: string]: number } = {};
+let debounceTimeout: NodeJS.Timeout;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     const db = await mysql.createConnection(dbConfig);
 
     try {
-        const pr = req.query.pr as string;
-
-        // Rate-limiting: limit to one request per PR per 5 seconds
-        const currentTime = Date.now();
-        if (requestMap[pr] && currentTime - requestMap[pr] < 5000) {
-            return res.status(429).send('Too Many Requests');
-        }
-        requestMap[pr] = currentTime;
-
         if (req.method === 'GET') {
+            const pr = req.query.pr as string;
             logger.info('Fetching progress for PR:', pr);
             const [rows]: any[] = await db.execute('SELECT * FROM PR_Tracker WHERE PR = ?', [pr]);
-            logger.info('Progress fetched:', rows[0]);
-            res.status(200).json(rows[0]);
+            if (rows.length > 0) {
+                logger.info('Progress fetched:', rows[0]);
+                res.status(200).json(rows[0]);
+            } else {
+                res.status(404).send('PR not found');
+            }
         } else if (req.method === 'POST') {
             const { pr, progress, state } = req.body;
 
-            logger.info('Updating progress for PR:', pr, 'with progress:', progress, 'and state:', state);
-            await db.execute(
-                'INSERT INTO PR_Tracker (PR, Progress, State) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Progress = ?, State = ?',
-                [pr, progress, state, progress, state]
-            );
-            logger.info('Progress updated for PR:', pr);
-            res.status(200).send('Progress updated');
+            // Clear existing debounce timeout if any
+            clearTimeout(debounceTimeout);
+
+            // Debounce the update operation to avoid multiple rapid requests
+            debounceTimeout = setTimeout(async () => {
+                try {
+                    logger.info(`Updating progress for PR: ${pr} with progress: ${progress} and state: ${state}`);
+                    await db.execute(
+                        `INSERT INTO PR_Tracker (PR, Progress, State)
+                         VALUES (?, ?, ?)
+                         ON DUPLICATE KEY UPDATE Progress = VALUES(Progress), State = VALUES(State)`,
+                        [pr, progress, state]
+                    );
+                    logger.info('Progress updated successfully for PR:', pr);
+                    res.status(200).send('Progress updated');
+                } catch (error) {
+                    logger.error('Error updating progress:', error);
+                    res.status(500).send('Failed to update progress');
+                }
+            }, 1000);
         } else {
             logger.warn('Method not allowed:', req.method);
             res.status(405).send('Method Not Allowed');
