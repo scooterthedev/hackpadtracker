@@ -1,4 +1,3 @@
-
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import * as mysql from 'mysql2/promise';
 import winston from 'winston';
@@ -17,11 +16,11 @@ const logger = winston.createLogger({
 });
 
 const dbConfig = {
-    host: import.meta.env.VITE_HOST,
-    user: import.meta.env.VITE_USER,
-    password: import.meta.env.VITE_PASSWORD,
-    database: import.meta.env.VITE_DATABASE,
-    port: import.meta.env.VITE_PORT
+    host: '9burt.h.filess.io',
+    user: 'PRTracker_telephone',
+    password: '9a25926ccb8d15c44c2dee92f217eb21e3fd9712',
+    database: 'PRTracker_telephone',
+    port: 3307
 };
 
 let debounceTimeout: NodeJS.Timeout;
@@ -42,8 +41,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             debounceTimeout = setTimeout(async () => {
                 logger.info('Updating progress for PR:', pr, 'with progress:', progress, 'and state:', state);
                 await db.execute(
-                    'INSERT INTO PR_Tracker (PR, Progress, State) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Progress = VALUES(Progress), State = VALUES(State)',
-                    [pr, progress, state]
+                    'INSERT INTO PR_Tracker (PR, Progress, State) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Progress = ?, State = ?',
+                    [pr, progress, state, progress, state]
                 );
                 logger.info('Progress updated for PR:', pr);
                 res.status(200).send('Progress updated');
