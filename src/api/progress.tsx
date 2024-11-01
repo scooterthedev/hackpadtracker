@@ -87,7 +87,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 await conn.execute(
                     `INSERT INTO PR_Tracker (PR, Progress, State)
                      VALUES (?, ?, ?)
-                     ON DUPLICATE KEY UPDATE 
+                     ON DUPLICATE KEY UPDATE
                          Progress = VALUES(Progress),
                          State = VALUES(State)`,
                     [pr, progress, state]
@@ -105,12 +105,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             logger.warn('Method not allowed:', req.method);
             return res.status(405).json({ error: 'Method Not Allowed' });
         }
-    } catch (error) {
-        logger.error('Error handling request:', error);
-        return res.status(500).json({
-            error: 'Internal Server Error',
-            message: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            logger.error('Error handling request:', error);
+            return res.status(500).json({
+                error: 'Internal Server Error',
+                message: process.env.NODE_ENV === 'development' ? error.message : undefined
+            });
+        } else {
+            logger.error('Unknown error:', error);
+            return res.status(500).json({
+                error: 'Internal Server Error'
+            });
+        }
     } finally {
         if (conn) {
             conn.release(); // Release the connection back to the pool
