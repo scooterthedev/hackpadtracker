@@ -1,26 +1,41 @@
 import axios from 'axios';
 
-export const savePRProgress = async (prUrl: string, progress: number, currentStage: string): Promise<void> => {
-  const pr = extractPRNumber(prUrl);
-  await axios.post('/api/progress', { pr, progress, state: currentStage });
-};
+export async function getPRProgress(pr: string) {
+    try {
+        const response = await axios.get('https://hackpadtracker-eta.vercel.app/api/progress', {
+            params: { pr }
+        });
+        console.log('Progress fetched:', response.data);
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            if (error.response) {
+                console.error('Error fetching progress:', error.response.status, error.response.statusText);
+            } else {
+                console.error('Error fetching progress:', error.message);
+            }
+        } else {
+            console.error('Unexpected error:', error);
+        }
+    }
+}
 
-export const getPRProgress = async (prUrl: string): Promise<PRProgress | null> => {
-  const pr = extractPRNumber(prUrl);
-  const response = await axios.get(`/api/progress?pr=${pr}`);
-  if (response.data) {
-    const { Progress, State } = response.data;
-    return {
-      prUrl,
-      progress: Progress,
-      currentStage: State,
-      lastUpdated: Date.now(),
-    };
-  }
-  return null;
-};
-
-const extractPRNumber = (prUrl: string): number => {
-  const match = prUrl.match(/\/pull\/(\d+)/);
-  return match ? parseInt(match[1], 10) : 0;
-};
+export async function savePRProgress(pr: string, progress: number, state: string) {
+    try {
+        const response = await axios.post('https://hackpadtracker-eta.vercel.app/api/progress', {
+            pr,
+            progress,
+            state
+        });
+        console.log('Progress updated:', response.data);
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            if (error.response) {
+                console.error('Error updating progress:', error.response.status, error.response.statusText);
+            } else {
+                console.error('Error updating progress:', error.message);
+            }
+        } else {
+            console.error('Unexpected error:', error);
+        }
+    }
+}
