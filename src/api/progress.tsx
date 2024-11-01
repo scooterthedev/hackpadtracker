@@ -46,7 +46,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 );
                 logger.info('Progress updated for PR:', pr);
                 res.status(200).send('Progress updated');
-            }, 1000); // Adjust the debounce delay as needed
+            }, 1000);
         } else {
             logger.warn('Method not allowed:', req.method);
             res.status(405).send('Method Not Allowed');
