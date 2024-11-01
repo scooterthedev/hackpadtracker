@@ -23,6 +23,8 @@ const dbConfig = {
     port: 3307
 };
 
+let debounceTimeout: NodeJS.Timeout;
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     const db = await mysql.createConnection(dbConfig);
 
@@ -35,13 +37,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             res.status(200).json(rows[0]);
         } else if (req.method === 'POST') {
             const { pr, progress, state } = req.body;
-            logger.info('Updating progress for PR:', pr, 'with progress:', progress, 'and state:', state);
-            await db.execute(
-                'INSERT INTO PR_Tracker (PR, Progress, State) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Progress = ?, State = ?',
-                [pr, progress, state, progress, state]
-            );
-            logger.info('Progress updated for PR:', pr);
-            res.status(200).send('Progress updated');
+            clearTimeout(debounceTimeout);
+            debounceTimeout = setTimeout(async () => {
+                logger.info('Updating progress for PR:', pr, 'with progress:', progress, 'and state:', state);
+                await db.execute(
+                    'INSERT INTO PR_Tracker (PR, Progress, State) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Progress = ?, State = ?',
+                    [pr, progress, state, progress, state]
+                );
+                logger.info('Progress updated for PR:', pr);
+                res.status(200).send('Progress updated');
+            }, 1000); // Adjust the debounce delay as needed
         } else {
             logger.warn('Method not allowed:', req.method);
             res.status(405).send('Method Not Allowed');
