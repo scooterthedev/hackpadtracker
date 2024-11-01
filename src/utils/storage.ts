@@ -2,7 +2,7 @@ import axios from 'axios';
 
 export async function getPRProgress(pr: string) {
     try {
-        const response = await axios.get('https://hackpadtracker-eta.vercel.app/api/progress', {
+        const response = await axios.get('https://hackpadtracker.vercel.app/api/progress', {
             params: { pr }
         });
         console.log('Progress fetched:', response.data);
@@ -21,7 +21,7 @@ export async function getPRProgress(pr: string) {
 
 export async function savePRProgress(pr: string, progress: number, state: string) {
     try {
-        const response = await axios.post('https://hackpadtracker-eta.vercel.app/api/progress', {
+        const response = await axios.post('https://hackpadtracker.vercel.app/api/progress', {
             pr,
             progress,
             state
