@@ -27,18 +27,26 @@ const dbConfig = {
 let debounceTimeout: NodeJS.Timeout;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    let db;
+    let db: mysql.Connection | undefined;
     try {
         db = await mysql.createConnection(dbConfig);
 
         if (req.method === 'GET') {
             const pr = req.query.pr as string;
+            if (!pr) {
+                res.status(400).send('PR query parameter is required');
+                return;
+            }
             logger.info('Fetching progress for PR:', pr);
             const [rows]: any[] = await db.execute('SELECT * FROM PR_Tracker WHERE PR = ?', [pr]);
             logger.info('Progress fetched:', rows[0]);
             res.status(200).json(rows[0]);
         } else if (req.method === 'POST') {
             const { pr, progress, state } = req.body;
+            if (!pr || !progress || !state) {
+                res.status(400).send('PR, progress, and state are required');
+                return;
+            }
             clearTimeout(debounceTimeout);
             debounceTimeout = setTimeout(async () => {
                 try {
