@@ -17,7 +17,6 @@ function App() {
     const [isAdmin, setIsAdmin] = useState(false);
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [loginError, setLoginError] = useState('');
-    const client_secrets = import.meta.env.VITE_CODE;
 
     const stages = [
         'PR Approved',
@@ -111,7 +110,6 @@ useEffect(() => {
 
             if (code) {
                 try {
-                    console.log(client_secrets);
                     const response = await fetch('https://slack.com/api/oauth.v2.access', {
                         method: 'POST',
                         headers: {
