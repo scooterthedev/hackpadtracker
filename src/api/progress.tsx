@@ -34,13 +34,15 @@ const PostRequestSchema = z.object({
 });
 
 const pool = new Pool({
-    connectionString: "postgresql://PR_Tracker_owner:JGAnwKy8kZY2@ep-cold-cell-a51c5kj8.us-east-2.aws.neon.tech/PR_Tracker",
+    connectionString: "ep-cold-cell-a51c5kj8.us-east-2.aws.neon.tech",
     ssl: {
         rejectUnauthorized: true
     },
     max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 2000,
+    user: "PR_Tracker_owner",
+    password: "JGAnwKy8kZY2"
 });
 
 const debounceTimeouts = new Map<string, NodeJS.Timeout>();
