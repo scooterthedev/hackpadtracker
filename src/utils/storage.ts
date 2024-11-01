@@ -2,10 +2,10 @@ import axios from 'axios';
 
 export async function getPRProgress(pr: string) {
     try {
-        const response = await axios.get('https://hackpadtracker-eta.vercel.app/api/progress', {
+        const response = await axios.get('https://hackpadtracker.vercel.app/api/progress', {
             params: { pr }
         });
-        console.log('Progress fetched:', response.data);
+        return response.data;
     } catch (error) {
         if (axios.isAxiosError(error)) {
             if (error.response) {
@@ -16,6 +16,7 @@ export async function getPRProgress(pr: string) {
         } else {
             console.error('Unexpected error:', error);
         }
+        return null;
     }
 }
 
@@ -27,6 +28,7 @@ export async function savePRProgress(pr: string, progress: number, state: string
             state
         });
         console.log('Progress updated:', response.data);
+        return response.data;
     } catch (error) {
         if (axios.isAxiosError(error)) {
             if (error.response) {
@@ -37,5 +39,6 @@ export async function savePRProgress(pr: string, progress: number, state: string
         } else {
             console.error('Unexpected error:', error);
         }
+        throw error;
     }
 }

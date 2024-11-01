@@ -34,19 +34,16 @@ const PostRequestSchema = z.object({
 });
 
 const pool = new Pool({
-    connectionString: "ep-cold-cell-a51c5kj8.us-east-2.aws.neon.tech",
+    connectionString: "ep-ancient-hall-a50cnz7s.us-east-2.aws.neon.tech",
     ssl: {
         rejectUnauthorized: true
     },
     max: 20,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
-    user: "PR_Tracker_owner",
-    password: "JGAnwKy8kZY2"
+    connectionTimeoutMillis: 2000
 });
 
 const debounceTimeouts = new Map<string, NodeJS.Timeout>();
-const DEBOUNCE_DELAY = 1000;
 
 interface DatabaseOperation<T> {
     (client: PoolClient): Promise<T>;
@@ -154,35 +151,25 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
 
     const { pr, progress, state } = validationResult.data;
 
-    const existingTimeout = debounceTimeouts.get(pr);
-    if (existingTimeout) {
-        clearTimeout(existingTimeout);
+    try {
+        await withTransaction(async (client) => {
+            await client.query(
+                `INSERT INTO pr_tracker (pr, progress, state)
+                 VALUES ($1, $2, $3)
+                 ON CONFLICT (pr)
+                     DO UPDATE SET
+                         progress = EXCLUDED.progress,
+                         state = EXCLUDED.state`,
+                [pr, progress, state]
+            );
+        });
+
+        logger.info('Progress updated', { pr, progress, state });
+        res.status(200).json({ message: 'Progress updated successfully' });
+    } catch (error) {
+        logger.error('Error updating progress', { error, pr });
+        res.status(500).json({ error: 'Failed to update progress' });
     }
-
-    const timeout = setTimeout(async () => {
-        try {
-            await withTransaction(async (client) => {
-                await client.query(
-                    `INSERT INTO pr_tracker (pr, progress, state)
-                     VALUES ($1, $2, $3)
-                     ON CONFLICT (pr)
-                         DO UPDATE SET
-                                       progress = EXCLUDED.progress,
-                                       state = EXCLUDED.state`,
-                    [pr, progress, state]
-                );
-            });
-
-            logger.info('Progress updated', { pr, progress, state });
-        } catch (error) {
-            logger.error('Error updating progress', { error, pr });
-        } finally {
-            debounceTimeouts.delete(pr);
-        }
-    }, DEBOUNCE_DELAY);
-
-    debounceTimeouts.set(pr, timeout);
-    res.status(202).json({ message: 'Update scheduled' });
 }
 
 async function cleanup() {
