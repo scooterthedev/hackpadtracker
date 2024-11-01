@@ -1,6 +1,6 @@
-import mysql from "mysql";
-import winston from "winston";
-import { Request, Response } from "express";
+import { NextRequest, NextResponse } from 'next/server';
+import * as mysql from 'mysql2/promise';
+import winston from 'winston';
 
 // Configure winston logger
 const logger = winston.createLogger({
@@ -15,57 +15,45 @@ const logger = winston.createLogger({
     ]
 });
 
-const db = mysql.createConnection({
+const dbConfig = {
     host: '9burt.h.filess.io',
     user: 'PRTracker_telephone',
     password: '9a25926ccb8d15c44c2dee92f217eb21e3fd9712',
     database: 'PRTracker_telephone',
     port: 3307
-});
-
-db.connect((err: mysql.MysqlError | null) => {
-    if (err) {
-        logger.error('Error connecting to MySQL:', err);
-        throw err;
-    }
-    logger.info('MySQL connected...');
-});
-
-const handler = (req: Request, res: Response): void => {
-    logger.info(`Received ${req.method} request for PR: ${req.query.pr || req.body.pr}`);
-
-    if (req.method === 'GET') {
-        const pr = req.query.pr as string;
-        logger.info('Fetching progress for PR:', pr);
-        db.query('SELECT * FROM PR_Tracker WHERE PR = ?', [pr], (err, result) => {
-            if (err) {
-                logger.error('Error fetching progress:', err);
-                res.status(500).json({ error: 'Internal Server Error' });
-                return;
-            }
-            logger.info('Progress fetched:', result[0]);
-            res.status(200).json(result[0]);
-        });
-    } else if (req.method === 'POST') {
-        const { pr, progress, state } = req.body as { pr: string; progress: string; state: string };
-        logger.info('Updating progress for PR:', pr, 'with progress:', progress, 'and state:', state);
-        db.query(
-            'INSERT INTO PR_Tracker (PR, Progress, State) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Progress = ?, State = ?',
-            [pr, progress, state, progress, state],
-            (err) => {
-                if (err) {
-                    logger.error('Error updating progress:', err);
-                    res.status(500).json({ error: 'Internal Server Error' });
-                    return;
-                }
-                logger.info('Progress updated for PR:', pr);
-                res.status(200).send('Progress updated');
-            }
-        );
-    } else {
-        logger.warn('Method not allowed:', req.method);
-        res.status(405).send('Method Not Allowed');
-    }
 };
 
-export default handler;
+export const config = {
+    runtime: 'edge',
+};
+
+export default async function handler(req: NextRequest) {
+    const db = await mysql.createConnection(dbConfig);
+
+    try {
+        if (req.method === 'GET') {
+            const pr = req.nextUrl.searchParams.get('pr');
+            logger.info('Fetching progress for PR:', pr);
+            const [rows]: [any[]] = await db.execute('SELECT * FROM PR_Tracker WHERE PR = ?', [pr]);
+            logger.info('Progress fetched:', rows[0]);
+            return NextResponse.json(rows[0]);
+        } else if (req.method === 'POST') {
+            const { pr, progress, state } = await req.json();
+            logger.info('Updating progress for PR:', pr, 'with progress:', progress, 'and state:', state);
+            await db.execute(
+                'INSERT INTO PR_Tracker (PR, Progress, State) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Progress = ?, State = ?',
+                [pr, progress, state, progress, state]
+            );
+            logger.info('Progress updated for PR:', pr);
+            return new NextResponse('Progress updated', { status: 200 });
+        } else {
+            logger.warn('Method not allowed:', req.method);
+            return new NextResponse('Method Not Allowed', { status: 405 });
+        }
+    } catch (error) {
+        logger.error('Error handling request:', error);
+        return new NextResponse('Internal Server Error', { status: 500 });
+    } finally {
+        await db.end();
+    }
+}

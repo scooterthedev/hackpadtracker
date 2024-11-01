@@ -9,7 +9,7 @@
       }
     },
     {
-      "src": "src/api/progress.js",
+      "src": "src/api/progress.tsx",
       "use": "@vercel/node"
     }
   ],
