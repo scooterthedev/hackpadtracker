@@ -23,7 +23,7 @@ const dbConfig = {
     port: 3307,
     pool: {
         min: 0,
-        max: 10,
+        max: 4,
         acquire: 30000,
         idle: 10000
     },
