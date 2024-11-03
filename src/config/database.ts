@@ -22,7 +22,7 @@ export const logger = winston.createLogger({
 });
 
 const dbConfig: PoolConfig = {
-    connectionString: process.env.DATABASE_URL || "postgresql://PR_Tracker_owner:JGAnwKy8kZY2@ep-cold-cell-a51c5kj8.us-east-2.aws.neon.tech:3007/PR_Tracker?sslmode=require",
+    connectionString: "postgresql://PR_Tracker_owner:JGAnwKy8kZY2@ep-cold-cell-a51c5kj8.us-east-2.aws.neon.tech:3007/PR_Tracker?sslmode=require",
     max: 20,
     idleTimeoutMillis: 60000,
     connectionTimeoutMillis: 5000,

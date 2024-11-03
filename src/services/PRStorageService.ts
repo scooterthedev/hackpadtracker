@@ -12,7 +12,7 @@ export class PRStorageService {
     private readonly dbService: DatabaseService;
 
     constructor(dbService: DatabaseService) {
-        this.API_BASE_URL = process.env.API_BASE_URL || 'https://hackpadtracker.vercel.app/api';
+        this.API_BASE_URL = 'https://hackpadtracker.vercel.app/api';
         this.dbService = dbService;
     }
 
