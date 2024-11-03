@@ -22,13 +22,29 @@ export const logger = winston.createLogger({
 });
 
 const dbConfig: PoolConfig = {
-    connectionString: "postgresql://PR_Tracker_owner:JGAnwKy8kZY2@ep-cold-cell-a51c5kj8.us-east-2.aws.neon.tech:3007/PR_Tracker?sslmode=require",
+    connectionString: "postgresql://PR_Tracker_owner:JGAnwKy8kZY2@ep-cold-cell-a51c5kj8.us-east-2.aws.neon.tech/PR_Tracker?sslmode=require",
     max: 20,
-    idleTimeoutMillis: 60000,
-    connectionTimeoutMillis: 5000,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
     ssl: {
-        rejectUnauthorized: true
+        rejectUnauthorized: false
     }
 };
 
-export const pool = new Pool(dbConfig); 
+export const pool = new Pool(dbConfig);
+
+// Set up pool event listeners
+pool.on('connect', () => {
+    logger.info('New database connection established');
+});
+
+pool.on('error', (err) => {
+    logger.error('Unexpected database error', {
+        error: err.message,
+        stack: err.stack
+    });
+});
+
+pool.on('remove', () => {
+    logger.info('Database connection removed from pool');
+}); 

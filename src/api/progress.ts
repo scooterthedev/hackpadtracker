@@ -1,36 +1,12 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { Pool, PoolClient } from 'pg';
-import winston from 'winston';
+import { PoolClient } from 'pg';
 import { z } from 'zod';
-
-const logger = winston.createLogger({
-    level: 'info',
-    format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.errors({ stack: true }),
-        winston.format.json()
-    ),
-    transports: [
-        new winston.transports.Console({
-            format: winston.format.combine(
-                winston.format.colorize(),
-                winston.format.simple()
-            )
-        })
-    ]
-});
+import { pool, logger } from '../config/database';
 
 const PostRequestSchema = z.object({
     pr: z.string().min(1),
     progress: z.number().min(0).max(100),
     state: z.string().min(1)
-});
-
-const pool = new Pool({
-    connectionString: "postgresql://PR_Tracker_owner:JGAnwKy8kZY2@ep-cold-cell-a51c5kj8.us-east-2.aws.neon.tech:3007/PR_Tracker?sslmode=require",
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000
 });
 
 const debounceTimeouts = new Map<string, NodeJS.Timeout>();

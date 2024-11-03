@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Pool, QueryResult, QueryResultRow } from 'pg';
 import { logger } from '../config/database';
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
 import { Github, Link2, AlertCircle, Shield } from 'lucide-react';
@@ -18,6 +19,7 @@ function App() {
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [loginError, setLoginError] = useState('');
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const stages = [
         'PR Approved',
         'Ordering PCBs',
@@ -58,7 +60,7 @@ useEffect(() => {
         try {
             console.log('Verifying user with token:', token);
 
-            const response = await fetch(`https://hackpadtracker.vercel.app/api/slack/api/users.profile.get?user=${userId}`, {
+            const response = await fetch(`https://hackpad-eta.vercel.app/api/slack/api/users.profile.get?user=${userId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
@@ -118,7 +120,7 @@ useEffect(() => {
                             client_id: '2210535565.7957522136834',
                             client_secret: "73271bfeae65d8281541c9802507f364",
                             code,
-                            redirect_uri: 'https://hackpadtracker.vercel.app/callback',
+                            redirect_uri: 'https://hackpad-eta.vercel.app/callback',
                         }),
                     });
 
