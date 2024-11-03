@@ -5,13 +5,8 @@ import ProgressBar from './components/ProgressBar';
 import AdminControls from './components/AdminControls';
 import LoginModal from './components/LoginModal';
 import { isValidGitHubPRUrl } from './utils/validation';
-import { savePRProgress, getPRProgress } from './utils/storage';
+import { prStorage } from './utils/storage';
 import Cookies from 'js-cookie';
-
-interface PRProgress {
-    progress: number;
-    currentStage: string;
-}
 
 function App() {
     const [prUrl, setPrUrl] = useState('');
@@ -35,14 +30,14 @@ function App() {
 
 useEffect(() => {
     if (isSubmitted && prUrl) {
-        getPRProgress(prUrl).then((savedProgress) => {
+        prStorage.getPRProgress(prUrl).then((savedProgress: any) => {
             if (savedProgress) {
                 setProgress(savedProgress.progress);
                 setCurrentStage(savedProgress.currentStage);
             } else {
                 setProgress(0);
                 setCurrentStage(stages[0]);
-                savePRProgress(prUrl, 0, stages[0]);
+                prStorage.savePRProgress(prUrl, 0, stages[0]);
             }
         });
     }
@@ -53,7 +48,7 @@ useEffect(() => {
         const newStage = stages[Math.floor((newProgress / 100) * (stages.length - 1))];
         setCurrentStage(newStage);
         if (isAdmin && prUrl) {
-            savePRProgress(prUrl, newProgress, newStage);
+            prStorage.savePRProgress(prUrl, newProgress, newStage);
         }
     };
 
@@ -253,7 +248,7 @@ useEffect(() => {
                                                 onProgressChange={handleProgressChange}
                                                 onStageChange={(stage) => {
                                                     setCurrentStage(stage);
-                                                    savePRProgress(prUrl, progress, stage);
+                                                    prStorage.savePRProgress(prUrl, progress, stage);
                                                 }}
                                             />
                                         )}
