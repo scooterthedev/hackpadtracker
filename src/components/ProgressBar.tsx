@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { savePRProgress } from '../utils/storage';
+import { prStorage } from '../utils/storage';
+
 
 interface ProgressBarProps {
     progress: number;
@@ -15,7 +16,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ progress, prUrl, currentStage
     useEffect(() => {
         const checkProgress = async () => {
             if (previousProgress.current === progress) {
-                await savePRProgress(prUrl, progress, currentStage);
+                await prStorage.savePRProgress(prUrl, progress, currentStage);
             }
             previousProgress.current = progress;
         };
