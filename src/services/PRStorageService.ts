@@ -8,8 +8,8 @@ export interface PRProgress {
 }
 
 export class PRStorageService {
-    private readonly API_BASE_URL: string;
-    private readonly dbService: DatabaseService;
+    API_BASE_URL: string;
+    dbService: DatabaseService;
 
     constructor(dbService: DatabaseService) {
         this.API_BASE_URL = 'https://hackpad-eta.vercel.app/api/progress';
