@@ -15,7 +15,7 @@ export class PRStorageService {
         this.API_BASE_URL = 'https://hackpad-eta.vercel.app/api/progress';
         this.dbService = dbService;
     }
-
+ 
     private extractPRNumber(prUrl: string): string {
         const matches = prUrl.match(/\/pull\/(\d+)/);
         if (!matches) {
