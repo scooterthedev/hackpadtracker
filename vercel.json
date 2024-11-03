@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "src/api/progress.tsx",
+      "src": "src/api/**/*.{js,ts,tsx}",
       "use": "@vercel/node"
     },
     {
@@ -15,16 +15,12 @@
   ],
   "routes": [
     {
-      "src": "/api/progress",
-      "dest": "src/api/progress.tsx"
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
     },
     {
-      "src": "/api/slack/(.*)",
-      "dest": "https://slack.com/$1"
-    },
-    {
-      "src": "/callback",
-      "dest": "/"
+      "src": "/(.*)",
+      "dest": "/$1"
     }
   ]
 }

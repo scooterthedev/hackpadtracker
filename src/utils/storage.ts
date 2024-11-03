@@ -4,4 +4,4 @@ import { PRStorageService } from '../services/PRStorageService';
 
 const dbService = new DatabaseService(pool);
 export const prStorage = new PRStorageService(dbService);
-export { withRetry } from '../utils/retry';
+export { withRetry } from './retry';
