@@ -1,4 +1,4 @@
-import { Pool, QueryResult } from 'pg';
+import { Pool, QueryResult, QueryResultRow } from 'pg';
 import { logger } from '../config/database';
 
 export class DatabaseService {
@@ -10,28 +10,25 @@ export class DatabaseService {
     }
 
     private setupPoolListeners(): void {
-        this.pool.on('connect', client => {
+        this.pool.on('connect', () => {
             logger.info('Database connection established', {
-                clientId: client.processID,
                 poolStats: this.getPoolStats()
             });
         });
 
-        this.pool.on('error', (err, client) => {
+        this.pool.on('error', (err) => {
             logger.error('Database pool error', {
                 error: {
                     name: err.name,
                     message: err.message,
                     stack: err.stack
                 },
-                clientId: client?.processID,
                 poolStats: this.getPoolStats()
             });
         });
 
-        this.pool.on('remove', client => {
+        this.pool.on('remove', () => {
             logger.info('Database connection removed', {
-                clientId: client.processID,
                 poolStats: this.getPoolStats()
             });
         });
@@ -45,8 +42,8 @@ export class DatabaseService {
         };
     }
 
-    async query<T = any>(queryText: string, values?: any[]): Promise<QueryResult<T>> {
-        const startTime = process.hrtime();
+    async query<T extends QueryResultRow = any>(queryText: string, values?: any[]): Promise<QueryResult<T>> {
+        const startTime: [number, number] = process.hrtime();
         
         try {
             const result = await this.pool.query<T>(queryText, values);
