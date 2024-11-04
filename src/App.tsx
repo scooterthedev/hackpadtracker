@@ -48,7 +48,7 @@ useEffect(() => {
 }, [isSubmitted, prUrl, stages]);
 
   const verifyUser = useCallback(async (token: string, userId: string) => {
-    const authorizedUsers = ['Scooter Y', 'CODER KID', 'xX_ALEXREN_Xx'];
+    const authorizedUsers = [import.meta.env.VITE_AUTHUSERS];
 
     try {
       console.log('Verifying user with token:', token);
