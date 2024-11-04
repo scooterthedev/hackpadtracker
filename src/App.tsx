@@ -104,7 +104,6 @@ useEffect(() => {
 
       if (code) {
         try {
-          console.log(client_secrets);
           const response = await fetch('https://slack.com/api/oauth.v2.access', {
             method: 'POST',
             headers: {
