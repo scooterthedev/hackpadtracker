@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { Lock } from 'lucide-react';
+import debounce from 'lodash/debounce';
 
 interface AdminControlsProps {
   progress: number;
@@ -18,6 +19,25 @@ const AdminControls: React.FC<AdminControlsProps> = ({
   onProgressChangeComplete,
   onStageChange,
 }) => {
+  const [localProgress, setLocalProgress] = useState(progress);
+
+  const debouncedProgressComplete = useCallback(
+    (value: number) => {
+      const debouncedFn = debounce((val: number) => {
+        onProgressChangeComplete(val);
+      }, 500);
+      debouncedFn(value);
+    },
+    [onProgressChangeComplete]
+  );
+
+  const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = Number(e.target.value);
+    setLocalProgress(newValue);
+    onProgressChange(newValue);
+    debouncedProgressComplete(newValue);
+  };
+
   return (
     <div className="space-y-4 border border-blue-500/20 rounded-lg p-4 bg-blue-500/5">
       <div className="flex items-center space-x-2 text-blue-400">
@@ -32,22 +52,11 @@ const AdminControls: React.FC<AdminControlsProps> = ({
             type="range"
             min="0"
             max="100"
-            value={progress}
-            onChange={(e) => {
-              const newValue = Number(e.target.value);
-              onProgressChange(newValue);
-            }}
-            onMouseUp={(e) => {
-              const newValue = Number((e.target as HTMLInputElement).value);
-              onProgressChangeComplete(newValue);
-            }}
-            onTouchEnd={(e) => {
-              const newValue = Number((e.target as HTMLInputElement).value);
-              onProgressChangeComplete(newValue);
-            }}
+            value={localProgress}
+            onChange={handleProgressChange}
             className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
           />
-          <div className="text-right text-sm text-gray-400 mt-1">{progress}%</div>
+          <div className="text-right text-sm text-gray-400 mt-1">{localProgress}%</div>
         </div>
 
         <div>
