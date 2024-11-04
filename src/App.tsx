@@ -216,15 +216,18 @@ useEffect(() => {
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                           <Link2 className="w-5 h-5 text-gray-400" />
                         </div>
-                        <input
-                          id="pr-url"
-                          name="pr-url"
-                          type="url"
-                          className="block w-full pl-10 pr-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                          placeholder="https://github.com/hackclub/hackpad/pull/1"
-                          value={prUrl}
-                          onChange={(e) => setPrUrl(e.target.value)}
-                        />
+                        <div className="flex items-center">
+                          <span className="pl-10 text-gray-400">https://github.com/hackclub/hackpad/pull/</span>
+                          <input
+                            id="pr-number"
+                            name="pr-number"
+                            type="text"
+                            className="w-20 py-2 border border-gray-600 rounded-lg bg-gray-700 text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            placeholder="256"
+                            value={prUrl.replace('https://github.com/hackclub/hackpad/pull/', '')}
+                            onChange={(e) => setPrUrl('https://github.com/hackclub/hackpad/pull/' + e.target.value)}
+                          />
+                        </div>
                       </div>
                       {!isValid && (
                         <div className="flex items-center space-x-2 text-red-400 text-sm mt-2">

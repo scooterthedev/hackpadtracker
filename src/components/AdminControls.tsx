@@ -31,7 +31,10 @@ const AdminControls: React.FC<AdminControlsProps> = ({
             min="0"
             max="100"
             value={progress}
-            onChange={(e) => onProgressChange(Number(e.target.value))}
+            onChange={(e) => {
+              const newValue = Number(e.target.value);
+              onProgressChange(newValue);
+            }}
             className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
           />
           <div className="text-right text-sm text-gray-400 mt-1">{progress}%</div>
