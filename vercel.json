@@ -1,26 +1,16 @@
 {
   "version": 2,
-  "builds": [
+  "redirects": [
     {
-      "src": "src/api/**/*.{js,ts,tsx}",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
+      "source": "/callback",
+      "destination": "/",
+      "statusCode": 302
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
+      "source": "/api/slack/(.*)",
+      "destination": "https://slack.com/$1"
     }
   ]
 }

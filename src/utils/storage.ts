@@ -1,7 +1,32 @@
-import { pool } from '../config/database';
-import { DatabaseService } from '../services/DatabaseService';
-import { PRStorageService } from '../services/PRStorageService';
+interface PRProgress {
+  prUrl: string;
+  progress: number;
+  currentStage: string;
+  lastUpdated: number;
+}
 
-const dbService = new DatabaseService(pool);
-export const prStorage = new PRStorageService(dbService);
-export { withRetry } from './retry';
+const STORAGE_KEY = 'pr-progress-data';
+
+export const savePRProgress = (prUrl: string, progress: number, currentStage: string): void => {
+  const data = getPRProgressData();
+  data[prUrl] = {
+    prUrl,
+    progress,
+    currentStage,
+    lastUpdated: Date.now(),
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+};
+
+export const getPRProgressData = (): Record<string, PRProgress> => {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  } catch {
+    return {};
+  }
+};
+
+export const getPRProgress = (prUrl: string): PRProgress | null => {
+  const data = getPRProgressData();
+  return data[prUrl] || null;
+};
