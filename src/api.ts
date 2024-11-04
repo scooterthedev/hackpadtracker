@@ -1,6 +1,8 @@
 import { supabase } from './utils/supabaseClient';
 
 export const savePRProgress = async (prUrl: string, progress: number, currentStage: string) => {
+  await new Promise(resolve => setTimeout(resolve, 100));
+  
   const { data, error } = await supabase
     .from('pr_progress')
     .upsert(
