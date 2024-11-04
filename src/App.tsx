@@ -53,7 +53,7 @@ useEffect(() => {
     try {
       console.log('Verifying user with token:', token);
 
-      const response = await fetch(`https://hackpadtracker-eta.vercel.app/api/slack/api/users.profile.get?user=${userId}`, {
+      const response = await fetch(import.meta.env.VITE_URL + `/api/slack/api/users.profile.get?user=${userId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -113,7 +113,7 @@ useEffect(() => {
               client_id: '2210535565.7957522136834',
               client_secret: import.meta.env.VITE_CODE,
               code,
-              redirect_uri: 'https://hackpadtracker-eta.vercel.app/callback',
+              redirect_uri: import.meta.env.VITE_URL + '/callback',
             }),
           });
 
