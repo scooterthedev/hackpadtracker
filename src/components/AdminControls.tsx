@@ -1,6 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Lock } from 'lucide-react';
-import { debounce } from 'lodash';
 
 interface AdminControlsProps {
   progress: number;
@@ -21,23 +20,14 @@ const AdminControls: React.FC<AdminControlsProps> = ({
 }) => {
   const [localProgress, setLocalProgress] = useState(progress);
 
-  const debouncedProgressComplete = useMemo(
-    () => debounce((value: number) => {
-      onProgressChangeComplete(value);
-    }, 100),
-    [onProgressChangeComplete]
-  );
-
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = Number(e.target.value);
     setLocalProgress(newValue);
     onProgressChange(newValue);
-    debouncedProgressComplete(newValue);
   };
 
   const handleProgressChangeComplete = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = Number(e.target.value);
-    debouncedProgressComplete.cancel();
     onProgressChangeComplete(newValue);
   };
 

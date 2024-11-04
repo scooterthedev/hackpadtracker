@@ -146,6 +146,16 @@ useEffect(() => {
 
     setIsValid(true);
     setIsSubmitted(true);
+
+    const savedProgress = await getPRProgress(prUrl);
+    if (savedProgress) {
+      setProgress(savedProgress.progress);
+      setCurrentStage(savedProgress.current_stage);
+    } else {
+      setProgress(0);
+      setCurrentStage(stages[0]);
+      await savePRProgress(prUrl, 0, stages[0]);
+    }
   };
 
   const handleLogout = () => {
@@ -153,17 +163,17 @@ useEffect(() => {
     Cookies.remove('slack_token');
   };
 
-  const handleProgressChange = useCallback((newProgress: number) => {
+  const handleProgressChange = (newProgress: number) => {
     setProgress(newProgress);
     const newStage = stages[Math.floor((newProgress / 100) * (stages.length - 1))];
     setCurrentStage(newStage);
-  }, [stages]);
+  };
 
-  const handleProgressComplete = useCallback(async (newProgress: number) => {
+  const handleProgressComplete = async (newProgress: number) => {
     if (prUrl) {
       await savePRProgress(prUrl, newProgress, currentStage);
     }
-  }, [prUrl, currentStage]);
+  };
 
   return (
     <Routes>

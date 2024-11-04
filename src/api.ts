@@ -1,7 +1,6 @@
 import { supabase } from './utils/supabaseClient';
-import { debounce } from 'lodash';
 
-const debouncedSavePRProgress = debounce(async (prUrl: string, progress: number, currentStage: string) => {
+export const savePRProgress = async (prUrl: string, progress: number, currentStage: string) => {
   const { data, error } = await supabase
     .from('pr_progress')
     .upsert(
@@ -16,10 +15,6 @@ const debouncedSavePRProgress = debounce(async (prUrl: string, progress: number,
     console.error('Error saving progress:', error);
   }
   return data;
-}, 1000);
-
-export const savePRProgress = (prUrl: string, progress: number, currentStage: string) => {
-  return debouncedSavePRProgress(prUrl, progress, currentStage);
 };
 
 export const getPRProgress = async (prUrl: string) => {
