@@ -228,6 +228,11 @@ useEffect(() => {
                             className="w-16 py-1.5 px-2 border border-gray-600 rounded-md bg-gray-700 text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                             placeholder="256"
                             value={prUrl.replace('https://github.com/hackclub/hackpad/pull/', '')}
+                            onKeyPress={(e) => {
+                              if (!/[0-9]/.test(e.key)) {
+                                e.preventDefault();
+                              }
+                            }}
                             onChange={(e) => setPrUrl('https://github.com/hackclub/hackpad/pull/' + e.target.value)}
                           />
                         </div>
