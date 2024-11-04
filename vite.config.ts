@@ -12,18 +12,13 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/slack/, ''),
         configure: (proxy) => {
-          proxy.on('proxyReq', (proxyReq, req) => {
+          proxy.on('proxyReq', (proxyReq, req, res) => {
             if (req.headers.authorization) {
               proxyReq.setHeader('Authorization', req.headers.authorization);
             }
           });
         },
       },
-      '/api/progress': {
-        target: 'https://hackpad-eta.vercel.app',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/progress/, '/api/progress')
-      }
     },
   },
 });
