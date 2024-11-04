@@ -1,11 +1,12 @@
 import React from 'react';
-import { Lock, Unlock } from 'lucide-react';
+import { Lock } from 'lucide-react';
 
 interface AdminControlsProps {
   progress: number;
   currentStage: string;
   stages: string[];
   onProgressChange: (progress: number) => void;
+  onProgressChangeComplete: (progress: number) => void;
   onStageChange: (stage: string) => void;
 }
 
@@ -14,6 +15,7 @@ const AdminControls: React.FC<AdminControlsProps> = ({
   currentStage,
   stages,
   onProgressChange,
+  onProgressChangeComplete,
   onStageChange,
 }) => {
   return (
@@ -34,6 +36,14 @@ const AdminControls: React.FC<AdminControlsProps> = ({
             onChange={(e) => {
               const newValue = Number(e.target.value);
               onProgressChange(newValue);
+            }}
+            onMouseUp={(e) => {
+              const newValue = Number((e.target as HTMLInputElement).value);
+              onProgressChangeComplete(newValue);
+            }}
+            onTouchEnd={(e) => {
+              const newValue = Number((e.target as HTMLInputElement).value);
+              onProgressChangeComplete(newValue);
             }}
             className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
           />
