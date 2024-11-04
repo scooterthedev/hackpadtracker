@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
 import { Github, Link2, AlertCircle, Shield } from 'lucide-react';
 import ProgressBar from './components/ProgressBar';
 import AdminControls from './components/AdminControls';
 import LoginModal from './components/LoginModal';
 import { isValidGitHubPRUrl } from './utils/validation';
-import { savePRProgress, getPRProgress } from './utils/storage';
+import { savePRProgress, getPRProgress } from './api';
 import Cookies from 'js-cookie';
 
 function App() {
@@ -31,111 +31,113 @@ function App() {
 
 // Load saved progress when PR URL is submitted
 useEffect(() => {
-  if (isSubmitted && prUrl) {
-    const savedProgress = getPRProgress(prUrl);
-    if (savedProgress) {
-      setProgress(savedProgress.progress);
-      setCurrentStage(savedProgress.currentStage);
-    } else {
-      // Initialize with 0% progress and first stage
-      setProgress(0);
-      setCurrentStage(stages[0]);
-      savePRProgress(prUrl, 0, stages[0]);
-    }
-  }
-}, [isSubmitted, prUrl, stages]);
-
-  const authorizedUsers = ['Scooter Y', 'CODER KID', 'xX_ALEXREN_Xx']; // Add more authorized users here if necessary
-
-const verifyUser = async (token: string, userId: string) => {
-  try {
-    console.log('Verifying user with token:', token);
-
-    const response = await fetch(`https://hackpadtracker-eta.vercel.app/api/slack/api/users.profile.get?user=${userId}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-
-    const data = await response.json();
-    console.log('Full response data:', data);
-
-    if (!data.ok) {
-      console.error('Error from Slack API:', data.error);
-      setLoginError(`Error: ${data.error}`);
-      return;
-    }
-
-    const profile = data.profile;
-    console.log('Profile data:', profile);
-
-    const userName = profile.display_name || profile.real_name;
-    console.log('Authenticated user:', userName);
-
-    if (authorizedUsers.includes(userName)) {
-      console.log('User is authorized');
-      setIsAdmin(true);
-      setShowLoginModal(false);
-      setLoginError('');
-    } else {
-      console.log('User is not authorized');
-      setLoginError('Unauthorized user');
-    }
-  } catch (error: any) {
-    console.error('Error during verification:', error);
-    setLoginError(error.message);
-  }
-};
-
-useEffect(() => {
-  const token = Cookies.get('slack_token');
-  const userId = Cookies.get('slack_user_id');
-  if (token && userId) {
-    verifyUser(token, userId);
-  }
-}, []);
-
-  useEffect(() => {
-  const handleCallback = async () => {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-
-    if (code) {
-      try {
-        console.log(client_secrets);
-        const response = await fetch('https://slack.com/api/oauth.v2.access', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: new URLSearchParams({
-            client_id: '2210535565.7957522136834',
-            client_secret: import.meta.env.VITE_CODE,
-            code,
-            redirect_uri: 'https://hackpadtracker-eta.vercel.app/callback',
-          }),
-        });
-
-        const data = await response.json();
-        if (data.ok) {
-          Cookies.set('slack_token', data.access_token);
-          Cookies.set('slack_user_id', data.authed_user.id);
-          await verifyUser(data.access_token, data.authed_user.id);
-          navigate('/');
-        } else {
-          setLoginError(`Error: ${data.error}`);
-        }
-      } catch (error: any) {
-        console.error('Error:', error);
-        setLoginError(error.message);
+  const loadProgress = async () => {
+    if (isSubmitted && prUrl) {
+      const savedProgress = await getPRProgress(prUrl);
+      if (savedProgress) {
+        setProgress(savedProgress.progress);
+        setCurrentStage(savedProgress.current_stage);
+      } else {
+        setProgress(0);
+        setCurrentStage(stages[0]);
+        await savePRProgress(prUrl, 0, stages[0]);
       }
     }
   };
+  loadProgress();
+}, [isSubmitted, prUrl, stages]);
 
-  handleCallback();
-}, [navigate]);
+  const verifyUser = useCallback(async (token: string, userId: string) => {
+    const authorizedUsers = ['Scooter Y', 'CODER KID', 'xX_ALEXREN_Xx'];
 
-  const handleSubmit = (e: React.FormEvent) => {
+    try {
+      console.log('Verifying user with token:', token);
+
+      const response = await fetch(`https://hackpadtracker-eta.vercel.app/api/slack/api/users.profile.get?user=${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+      console.log('Full response data:', data);
+
+      if (!data.ok) {
+        console.error('Error from Slack API:', data.error);
+        setLoginError(`Error: ${data.error}`);
+        return;
+      }
+
+      const profile = data.profile;
+      console.log('Profile data:', profile);
+
+      const userName = profile.display_name || profile.real_name;
+      console.log('Authenticated user:', userName);
+
+      if (authorizedUsers.includes(userName)) {
+        console.log('User is authorized');
+        setIsAdmin(true);
+        setShowLoginModal(false);
+        setLoginError('');
+      } else {
+        console.log('User is not authorized');
+        setLoginError('Unauthorized user');
+      }
+    } catch (error: any) {
+      console.error('Error during verification:', error);
+      setLoginError(error.message);
+    }
+  }, [setIsAdmin, setShowLoginModal, setLoginError]);
+
+  useEffect(() => {
+    const token = Cookies.get('slack_token');
+    const userId = Cookies.get('slack_user_id');
+    if (token && userId) {
+      verifyUser(token, userId);
+    }
+  }, [verifyUser]);
+
+  useEffect(() => {
+    const handleCallback = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+
+      if (code) {
+        try {
+          console.log(client_secrets);
+          const response = await fetch('https://slack.com/api/oauth.v2.access', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+              client_id: '2210535565.7957522136834',
+              client_secret: import.meta.env.VITE_CODE,
+              code,
+              redirect_uri: 'https://hackpadtracker-eta.vercel.app/callback',
+            }),
+          });
+
+          const data = await response.json();
+          if (data.ok) {
+            Cookies.set('slack_token', data.access_token);
+            Cookies.set('slack_user_id', data.authed_user.id);
+            await verifyUser(data.access_token, data.authed_user.id);
+            navigate('/');
+          } else {
+            setLoginError(`Error: ${data.error}`);
+          }
+        } catch (error: any) {
+          console.error('Error:', error);
+          setLoginError(error.message);
+        }
+      }
+    };
+
+    handleCallback();
+  }, [navigate, client_secrets, verifyUser]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!isValidGitHubPRUrl(prUrl)) {
@@ -146,14 +148,14 @@ useEffect(() => {
     setIsValid(true);
     setIsSubmitted(true);
 
-    const savedProgress = getPRProgress(prUrl);
+    const savedProgress = await getPRProgress(prUrl);
     if (savedProgress) {
       setProgress(savedProgress.progress);
-      setCurrentStage(savedProgress.currentStage);
+      setCurrentStage(savedProgress.current_stage);
     } else {
       setProgress(0);
       setCurrentStage(stages[0]);
-      savePRProgress(prUrl, 0, stages[0]);
+      await savePRProgress(prUrl, 0, stages[0]);
     }
   };
 
@@ -162,12 +164,12 @@ useEffect(() => {
     Cookies.remove('slack_token');
   };
 
-  const handleProgressChange = (newProgress: number) => {
+  const handleProgressChange = async (newProgress: number) => {
     setProgress(newProgress);
     const newStage = stages[Math.floor((newProgress / 100) * (stages.length - 1))];
     setCurrentStage(newStage);
     if (isAdmin && prUrl) {
-      savePRProgress(prUrl, newProgress, newStage);
+      await savePRProgress(prUrl, newProgress, newStage);
     }
   };
 
