@@ -153,17 +153,17 @@ useEffect(() => {
     Cookies.remove('slack_token');
   };
 
-  const handleProgressChange = (newProgress: number) => {
+  const handleProgressChange = useCallback((newProgress: number) => {
     setProgress(newProgress);
     const newStage = stages[Math.floor((newProgress / 100) * (stages.length - 1))];
     setCurrentStage(newStage);
-  };
+  }, [stages]);
 
-  const handleProgressComplete = async (newProgress: number) => {
+  const handleProgressComplete = useCallback(async (newProgress: number) => {
     if (prUrl) {
       await savePRProgress(prUrl, newProgress, currentStage);
     }
-  };
+  }, [prUrl, currentStage]);
 
   return (
     <Routes>
