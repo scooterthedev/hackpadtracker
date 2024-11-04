@@ -21,22 +21,23 @@ const AdminControls: React.FC<AdminControlsProps> = ({
 }) => {
   const [localProgress, setLocalProgress] = useState(progress);
 
-  const debouncedProgressChange = useMemo(
+  const debouncedProgressComplete = useMemo(
     () => debounce((value: number) => {
-      onProgressChange(value);
+      onProgressChangeComplete(value);
     }, 100),
-    [onProgressChange]
+    [onProgressChangeComplete]
   );
 
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = Number(e.target.value);
     setLocalProgress(newValue);
-    debouncedProgressChange(newValue);
+    onProgressChange(newValue);
+    debouncedProgressComplete(newValue);
   };
 
   const handleProgressChangeComplete = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = Number(e.target.value);
-    debouncedProgressChange.cancel();
+    debouncedProgressComplete.cancel();
     onProgressChangeComplete(newValue);
   };
 
