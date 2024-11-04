@@ -29,6 +29,33 @@ function App() {
 
   const navigate = useNavigate();
 
+  const [debouncedSave] = useState(() => {
+    let timeoutId: number | null = null;
+    return (prUrl: string, progress: number, stage: string) => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      
+      // Save to localStorage immediately
+      localStorage.setItem('tempProgress', JSON.stringify({
+        prUrl,
+        progress,
+        stage,
+        timestamp: Date.now()
+      }));
+
+      // Schedule API call after 3 seconds of no changes
+      timeoutId = window.setTimeout(async () => {
+        const savedData = localStorage.getItem('tempProgress');
+        if (savedData) {
+          const { prUrl, progress, stage } = JSON.parse(savedData);
+          await savePRProgress(prUrl, progress, stage);
+          localStorage.removeItem('tempProgress');
+        }
+      }, 3000);
+    };
+  });
+
 // Load saved progress when PR URL is submitted
 useEffect(() => {
   const loadProgress = async () => {
@@ -168,7 +195,7 @@ useEffect(() => {
     const newStage = stages[Math.floor((newProgress / 100) * (stages.length - 1))];
     setCurrentStage(newStage);
     if (isAdmin && prUrl) {
-      await savePRProgress(prUrl, newProgress, newStage);
+      debouncedSave(prUrl, newProgress, newStage);
     }
   };
 
@@ -265,9 +292,10 @@ useEffect(() => {
                         onProgressChange={handleProgressChange}
                         onStageChange={(stage) => {
                           setCurrentStage(stage);
-                          savePRProgress(prUrl, progress, stage);
+                          if (isAdmin && prUrl) {
+                            debouncedSave(prUrl, progress, stage);
+                          }
                         }}
-                        onProgressChangeComplete={handleProgressChange}
                       />
                     )}
 
