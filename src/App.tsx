@@ -47,17 +47,12 @@ useEffect(() => {
           setCurrentStage(savedProgress.current_stage);
           // Save to local storage for future use
           savePRProgressLocally(prUrl, savedProgress.progress, savedProgress.current_stage);
-        } else {
-          setProgress(0);
-          setCurrentStage(stages[0]);
-          savePRProgressLocally(prUrl, 0, stages[0]);
-          await savePRProgress(prUrl, 0, stages[0]);
         }
       }
     }
   };
   loadProgress();
-}, [isSubmitted, prUrl, stages]);
+}, [isSubmitted, prUrl]);
 
   const verifyUser = useCallback(async (token: string, userId: string) => {
     const authorizedUsers = [import.meta.env.VITE_AUTHUSERS1, import.meta.env.VITE_AUTHUSERS2, import.meta.env.VITE_AUTHUSERS3];
@@ -163,9 +158,12 @@ useEffect(() => {
     if (savedProgress) {
       setProgress(savedProgress.progress);
       setCurrentStage(savedProgress.current_stage);
+      // Save to local storage after initial fetch
+      savePRProgressLocally(prUrl, savedProgress.progress, savedProgress.current_stage);
     } else {
       setProgress(0);
       setCurrentStage(stages[0]);
+      savePRProgressLocally(prUrl, 0, stages[0]);
       await savePRProgress(prUrl, 0, stages[0]);
     }
   };
@@ -180,14 +178,23 @@ useEffect(() => {
     const newStage = stages[Math.floor((newProgress / 100) * (stages.length - 1))];
     setCurrentStage(newStage);
     
-    // Save to local storage immediately
+    // Always update local storage immediately
     savePRProgressLocally(prUrl, newProgress, newStage);
   };
 
   const handleProgressComplete = async (newProgress: number) => {
     if (prUrl) {
-      // Only sync with external DB when complete
+      // Sync with DB
       await savePRProgress(prUrl, newProgress, currentStage);
+      
+      // Fetch latest from DB to ensure consistency
+      const latestProgress = await getPRProgress(prUrl);
+      if (latestProgress) {
+        setProgress(latestProgress.progress);
+        setCurrentStage(latestProgress.current_stage);
+        // Update local storage with latest DB data
+        savePRProgressLocally(prUrl, latestProgress.progress, latestProgress.current_stage);
+      }
     }
   };
 
