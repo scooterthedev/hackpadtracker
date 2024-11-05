@@ -7,6 +7,7 @@ import LoginModal from './components/LoginModal';
 import { isValidGitHubPRUrl } from './utils/validation';
 import { savePRProgress, getPRProgress } from './api';
 import Cookies from 'js-cookie';
+import { savePRProgressLocally } from './utils/storage';
 
 function App() {
   const [prUrl, setPrUrl] = useState('');
@@ -33,14 +34,25 @@ function App() {
 useEffect(() => {
   const loadProgress = async () => {
     if (isSubmitted && prUrl) {
-      const savedProgress = await getPRProgress(prUrl);
-      if (savedProgress) {
-        setProgress(savedProgress.progress);
-        setCurrentStage(savedProgress.current_stage);
+      // First check local storage
+      const localProgress = getPRProgress(prUrl);
+      if (localProgress) {
+        setProgress(localProgress.progress);
+        setCurrentStage(localProgress.currentStage);
       } else {
-        setProgress(0);
-        setCurrentStage(stages[0]);
-        await savePRProgress(prUrl, 0, stages[0]);
+        // If not in local storage, fetch from DB
+        const savedProgress = await getPRProgress(prUrl);
+        if (savedProgress) {
+          setProgress(savedProgress.progress);
+          setCurrentStage(savedProgress.current_stage);
+          // Save to local storage for future use
+          savePRProgressLocally(prUrl, savedProgress.progress, savedProgress.current_stage);
+        } else {
+          setProgress(0);
+          setCurrentStage(stages[0]);
+          savePRProgressLocally(prUrl, 0, stages[0]);
+          await savePRProgress(prUrl, 0, stages[0]);
+        }
       }
     }
   };
@@ -167,10 +179,14 @@ useEffect(() => {
     setProgress(newProgress);
     const newStage = stages[Math.floor((newProgress / 100) * (stages.length - 1))];
     setCurrentStage(newStage);
+    
+    // Save to local storage immediately
+    savePRProgressLocally(prUrl, newProgress, newStage);
   };
 
   const handleProgressComplete = async (newProgress: number) => {
     if (prUrl) {
+      // Only sync with external DB when complete
       await savePRProgress(prUrl, newProgress, currentStage);
     }
   };
