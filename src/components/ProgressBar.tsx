@@ -1,13 +1,19 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface ProgressBarProps {
   progress: number;
 }
 
 const ProgressBar: React.FC<ProgressBarProps> = ({ progress }) => {
+  const [currentProgress, setCurrentProgress] = useState(progress);
+
+  useEffect(() => {
+    setCurrentProgress(progress);
+  }, [progress]);
+
   // Create 10 segments
   const totalSegments = 10;
-  const completedSegments = Math.floor((progress / 100) * totalSegments);
+  const completedSegments = Math.floor((currentProgress / 100) * totalSegments);
 
   return (
     <div className="relative pt-1">

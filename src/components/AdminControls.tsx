@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Lock } from 'lucide-react';
+import { debounce } from 'lodash';
 
 interface AdminControlsProps {
   progress: number;
@@ -20,15 +21,19 @@ const AdminControls: React.FC<AdminControlsProps> = ({
 }) => {
   const [localProgress, setLocalProgress] = useState(progress);
 
+  // Debounce the progress change complete callback
+  const debouncedProgressComplete = useCallback(
+    debounce((value: number) => {
+      onProgressChangeComplete(value);
+    }, 500),
+    [onProgressChangeComplete]
+  );
+
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = Number(e.target.value);
     setLocalProgress(newValue);
     onProgressChange(newValue);
-  };
-
-  const handleProgressChangeComplete = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = Number(e.target.value);
-    onProgressChangeComplete(newValue);
+    debouncedProgressComplete(newValue);
   };
 
   return (
@@ -47,8 +52,6 @@ const AdminControls: React.FC<AdminControlsProps> = ({
             max="100"
             value={localProgress}
             onChange={handleProgressChange}
-            onMouseUp={(e) => handleProgressChangeComplete(e as any)}
-            onTouchEnd={(e) => handleProgressChangeComplete(e as any)}
             className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
           />
           <div className="text-right text-sm text-gray-400 mt-1">{localProgress}%</div>
