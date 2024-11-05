@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { Lock } from 'lucide-react';
 import { debounce } from 'lodash';
 
@@ -20,23 +20,34 @@ const AdminControls: React.FC<AdminControlsProps> = ({
   onStageChange,
 }) => {
   const [localProgress, setLocalProgress] = useState(progress);
+  const isDraggingRef = useRef(false);
 
-  // Debounce the progress change to reduce API calls
+  // Sync local progress with prop when not dragging
+  useEffect(() => {
+    if (!isDraggingRef.current) {
+      setLocalProgress(progress);
+    }
+  }, [progress]);
+
+  // Update parent component's state while dragging without API calls
   const debouncedProgressChange = useCallback(
-    (value: number) => {
-      debounce((v: number) => onProgressChange(v), 100)(value);
-    },
+    debounce((value: number) => {
+      onProgressChange(value);
+    }, 100),
     [onProgressChange]
   );
 
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(e.target.value);
+    isDraggingRef.current = true;
     setLocalProgress(value);
     debouncedProgressChange(value);
   };
 
   const handleProgressComplete = () => {
-    onProgressChangeComplete(localProgress);
+    isDraggingRef.current = false;
+    debouncedProgressChange.cancel(); // Cancel any pending debounced updates
+    onProgressChangeComplete(localProgress); // Send final value to API
   };
 
   return (
@@ -57,6 +68,7 @@ const AdminControls: React.FC<AdminControlsProps> = ({
             onChange={handleProgressChange}
             onMouseUp={handleProgressComplete}
             onTouchEnd={handleProgressComplete}
+            onMouseLeave={handleProgressComplete}
             className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
           />
           <div className="text-right text-sm text-gray-400 mt-1">{localProgress}%</div>

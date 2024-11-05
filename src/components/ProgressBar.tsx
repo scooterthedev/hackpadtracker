@@ -1,11 +1,10 @@
-import React from 'react';
+import React, { memo } from 'react';
 
 interface ProgressBarProps {
   progress: number;
 }
 
-const ProgressBar: React.FC<ProgressBarProps> = ({ progress }) => {
-  // Create 10 segments
+const ProgressBar: React.FC<ProgressBarProps> = memo(({ progress }) => {
   const totalSegments = 10;
   const completedSegments = Math.floor((progress / 100) * totalSegments);
 
@@ -29,6 +28,8 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ progress }) => {
       </div>
     </div>
   );
-};
+});
+
+ProgressBar.displayName = 'ProgressBar';
 
 export default ProgressBar;
