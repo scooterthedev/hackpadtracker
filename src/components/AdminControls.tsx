@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Lock } from 'lucide-react';
+import { debounce } from 'lodash';
 
 interface AdminControlsProps {
   progress: number;
@@ -28,17 +29,29 @@ const AdminControls: React.FC<AdminControlsProps> = ({
     }
   }, [progress]);
 
+  // Update parent component's state while dragging without API calls
+  const debouncedProgressChange = useRef(
+    debounce((value: number) => onProgressChange(value), 100)
+  ).current;
+
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(e.target.value);
     isDraggingRef.current = true;
     setLocalProgress(value);
-    onProgressChange(value);
+    debouncedProgressChange(value);
   };
 
   const handleProgressComplete = () => {
     isDraggingRef.current = false;
-    onProgressChangeComplete(localProgress); // Trigger POST request
+    debouncedProgressChange.cancel(); // Cancel any pending debounced updates
+    onProgressChangeComplete(localProgress); // Send final value to API
   };
+
+  useEffect(() => {
+    return () => {
+      debouncedProgressChange.cancel();
+    };
+  }, [debouncedProgressChange]);
 
   return (
     <div className="space-y-4 border border-blue-500/20 rounded-lg p-4 bg-blue-500/5">
