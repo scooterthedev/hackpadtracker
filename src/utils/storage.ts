@@ -2,7 +2,6 @@ interface PRProgress {
   prUrl: string;
   progress: number;
   currentStage: string;
-  lastUpdated: number;
 }
 
 const STORAGE_KEY = 'pr-progress-data';
@@ -12,8 +11,7 @@ export const savePRProgress = (prUrl: string, progress: number, currentStage: st
   data[prUrl] = {
     prUrl,
     progress,
-    currentStage,
-    lastUpdated: Date.now(),
+    currentStage
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 };
