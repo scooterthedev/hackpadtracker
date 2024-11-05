@@ -29,9 +29,29 @@ This is a PR tracker for Hack Club's YSWS Hackpad. This project has been a major
    3. Make your *Database Name*, **PR_Tracker**, and click *Create*.
    4. Make a note of the *NEXT_PUBLIC_SUPABASE_ANON_KEY*, and the *NEXT_PUBLIC_SUPABASE_URL*, and there values as these will be important for later.
 
-9. Now that you have created your database, head back over to *Settings* -> *Environment Variables*, set multiple variables. This will be necessary to make sure everything works fine.
+9. Next you will have to configure the SQL database
 
-10. These are the necessary variables to set for the website to function properly
+   1. Head over to your database, and click on *Open in Supabase*.
+
+   2. Then head over the *SQL Editor* on the left hand bar.
+
+   3. Paste this command in to the editor and click *Run* create the database properly:
+
+      `CREATE TABLE pr_progress (`
+
+        `id SERIAL PRIMARY KEY,`
+
+        `pr_url TEXT NOT NULL UNIQUE,`
+
+        `progress INTEGER NOT NULL,`
+
+        `current_stage TEXT NOT NULL`
+
+      `);`
+
+10. Now that you have created your database, head back over to vercel's *Settings* -> *Environment Variables*, to set multiple variables. This will be necessary to make sure everything works fine.
+
+11. These are the necessary variables to set for the website to function properly
 
     1. *VITE_URL* - (This is the main url for the project. Used for callback, fetching profile info etc) - set it to the **vercel url** **with no end slash and with the https://** eg. https://hackpadtracker-eta.vercel.app
     2. *VITE_AUTHUSERS3*, *VITE_AUTHUSERS2*, *VITE_AUTHUSERS1* - (These are used for the authorized users allowed to login to be an admin) - **set it to be the slack profile names of the users allowed to be authed with each user being under a different var** ie. VITE_AUTHUSERS3 = Scooter Y, VITE_AUTHUSERS2 = CODER KID etc.
@@ -39,7 +59,7 @@ This is a PR tracker for Hack Club's YSWS Hackpad. This project has been a major
     4. *VITE_SUPABASE_ANON_KEY* - (This will be your supabase key) - set this to be the value from the *NEXT_PUBLIC_SUPABASE_ANON_KEY* that you took a note of earlier on.
     5. *VITE_SUPABASE_URL* - (This will be your supabase url) - set this to be the value from the *NEXT_PUBLIC_SUPABASE_URL* that you took a note of earlier on.
 
-11. Save everything, and if your deployment has already been pushed do the steps below, and if not head over to step 12
+12. Save everything, and if your deployment has already been pushed do the steps below, and if not head over to step 13
 
     1. If your repo has already been deployed once while you were configuring everything, you will need to re-reploy it for vercel to realize the environmental variable changes: 
 
@@ -50,6 +70,16 @@ This is a PR tracker for Hack Club's YSWS Hackpad. This project has been a major
 
        I highly recommend you do **step 1**, and doing step 2 can cause problems on vercel's auto-domain assignment system.
 
-12. If you have configured the slack bot and vercel all correctly, you should be able to push my code with no changes up to your repo and watch vercel auto-deploy it, and everything should work out well! Now every time you push a commit to main, vercel will automatically deploy it for you! 
+13. If you have configured the slack bot and vercel all correctly, you should be able to push my code with no changes up to your repo and watch vercel auto-deploy it, and everything should work out well! Now every time you push a commit to main, vercel will automatically deploy it for you! 
 
-13. If anything goes wrong throughout this, feel free to reach to me [@scooterthedev](https://github.com/scooterthedev) or [@0CODERKID](https://github.com/0CODERKID) for help!
+14. If anything goes wrong throughout this, feel free to reach to me [@scooterthedev](https://github.com/scooterthedev) or [@0CODERKID](https://github.com/0CODERKID) for help!
+
+
+
+## Screenshots
+
+![https://cloud-m09a2igh9-hack-club-bot.vercel.app/0image.png](https://cloud-m09a2igh9-hack-club-bot.vercel.app/0image.png)
+
+![https://cloud-cbzt8rgxa-hack-club-bot.vercel.app/0image.png](https://cloud-cbzt8rgxa-hack-club-bot.vercel.app/0image.png)
+
+![https://cloud-i74avf30h-hack-club-bot.vercel.app/0image.png](https://cloud-i74avf30h-hack-club-bot.vercel.app/0image.png)
