@@ -5,8 +5,10 @@ interface ProgressBarProps {
 }
 
 const ProgressBar: React.FC<ProgressBarProps> = memo(({ progress }) => {
+  // Check local storage first for smoother updates
+  const effectiveProgress = Number(localStorage.getItem('admin-progress')) || progress;
   const totalSegments = 10;
-  const completedSegments = Math.floor((progress / 100) * totalSegments);
+  const completedSegments = Math.floor((effectiveProgress / 100) * totalSegments);
 
   return (
     <div className="relative pt-1">
