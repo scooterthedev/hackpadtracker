@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { Lock } from 'lucide-react';
+import { debounce } from 'lodash';
 
 interface AdminControlsProps {
   progress: number;
@@ -18,6 +19,26 @@ const AdminControls: React.FC<AdminControlsProps> = ({
   onProgressChangeComplete,
   onStageChange,
 }) => {
+  const [localProgress, setLocalProgress] = useState(progress);
+
+  // Debounce the progress change to reduce API calls
+  const debouncedProgressChange = useCallback(
+    (value: number) => {
+      debounce((v: number) => onProgressChange(v), 100)(value);
+    },
+    [onProgressChange]
+  );
+
+  const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = Number(e.target.value);
+    setLocalProgress(value);
+    debouncedProgressChange(value);
+  };
+
+  const handleProgressComplete = () => {
+    onProgressChangeComplete(localProgress);
+  };
+
   return (
     <div className="space-y-4 border border-blue-500/20 rounded-lg p-4 bg-blue-500/5">
       <div className="flex items-center space-x-2 text-blue-400">
@@ -32,13 +53,13 @@ const AdminControls: React.FC<AdminControlsProps> = ({
             type="range"
             min="0"
             max="100"
-            value={progress}
-            onChange={(e) => onProgressChange(Number(e.target.value))}
-            onMouseUp={(e) => onProgressChangeComplete(Number((e.target as HTMLInputElement).value))}
-            onTouchEnd={(e) => onProgressChangeComplete(Number((e.target as HTMLInputElement).value))}
+            value={localProgress}
+            onChange={handleProgressChange}
+            onMouseUp={handleProgressComplete}
+            onTouchEnd={handleProgressComplete}
             className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
           />
-          <div className="text-right text-sm text-gray-400 mt-1">{progress}%</div>
+          <div className="text-right text-sm text-gray-400 mt-1">{localProgress}%</div>
         </div>
 
         <div>
