@@ -9,7 +9,12 @@ interface AdminControlsProps {
   onStageChange: (stage: string) => void;
 }
 
-const STORAGE_KEY = 'progress-value';
+interface StoredData {
+  progress: number;
+  stage: string;
+}
+
+const STORAGE_KEY = 'admin-controls-data';
 
 const AdminControls: React.FC<AdminControlsProps> = ({
   initialProgress,
@@ -18,19 +23,30 @@ const AdminControls: React.FC<AdminControlsProps> = ({
   onProgressComplete,
   onStageChange,
 }) => {
-  const [localProgress, setLocalProgress] = useState(() => {
+  const [localData, setLocalData] = useState<StoredData>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? Number(stored) : initialProgress;
+    return stored ? JSON.parse(stored) : {
+      progress: initialProgress,
+      stage: currentStage
+    };
   });
   
   const isDraggingRef = useRef(false);
-  const lastValueRef = useRef(localProgress);
+  const lastValueRef = useRef(localData.progress);
 
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = Number(e.target.value);
-    setLocalProgress(value);
-    localStorage.setItem(STORAGE_KEY, String(value));
+    const progress = Number(e.target.value);
+    const newData = { ...localData, progress };
+    setLocalData(newData);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
     isDraggingRef.current = true;
+  };
+
+  const handleStageChange = (stage: string) => {
+    const newData = { ...localData, stage };
+    setLocalData(newData);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+    onStageChange(stage);
   };
 
   const handleProgressComplete = () => {
@@ -38,11 +54,11 @@ const AdminControls: React.FC<AdminControlsProps> = ({
   };
 
   useEffect(() => {
-    if (!isDraggingRef.current && lastValueRef.current !== localProgress) {
-      onProgressComplete(localProgress);
-      lastValueRef.current = localProgress;
+    if (!isDraggingRef.current && lastValueRef.current !== localData.progress) {
+      onProgressComplete(localData.progress);
+      lastValueRef.current = localData.progress;
     }
-  }, [localProgress, onProgressComplete]);
+  }, [localData.progress, onProgressComplete]);
 
   return (
     <div className="space-y-4 border border-blue-500/20 rounded-lg p-4 bg-blue-500/5">
@@ -58,21 +74,21 @@ const AdminControls: React.FC<AdminControlsProps> = ({
             type="range"
             min="0"
             max="100"
-            value={localProgress}
+            value={localData.progress}
             onChange={handleProgressChange}
             onMouseUp={handleProgressComplete}
             onTouchEnd={handleProgressComplete}
             onMouseLeave={handleProgressComplete}
             className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
           />
-          <div className="text-right text-sm text-gray-400 mt-1">{localProgress}%</div>
+          <div className="text-right text-sm text-gray-400 mt-1">{localData.progress}%</div>
         </div>
 
         <div>
           <label className="block text-sm text-gray-400 mb-1">Current Stage</label>
           <select
-            value={currentStage}
-            onChange={(e) => onStageChange(e.target.value)}
+            value={localData.stage}
+            onChange={(e) => handleStageChange(e.target.value)}
             className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 text-sm"
           >
             {stages.map((stage) => (

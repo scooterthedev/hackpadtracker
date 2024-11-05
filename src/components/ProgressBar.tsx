@@ -5,7 +5,8 @@ interface ProgressBarProps {
 }
 
 const ProgressBar: React.FC<ProgressBarProps> = memo(({ defaultProgress }) => {
-  const progress = Number(localStorage.getItem('progress-value')) || defaultProgress;
+  const storedData = JSON.parse(localStorage.getItem('admin-controls-data') || '{}');
+  const progress = storedData.progress || defaultProgress;
   const totalSegments = 10;
   const completedSegments = Math.floor((progress / 100) * totalSegments);
 
