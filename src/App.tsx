@@ -198,6 +198,22 @@ useEffect(() => {
     }
   };
 
+  const handleStageChange = (selectedStage: string) => {
+    const stageIndex = stages.indexOf(selectedStage);
+    const newProgress = Math.round((stageIndex / (stages.length - 1)) * 100);
+    
+    setProgress(newProgress);
+    setCurrentStage(selectedStage);
+    
+    // Update local storage
+    savePRProgressLocally(prUrl, newProgress, selectedStage);
+    
+    // Sync with DB
+    if (prUrl) {
+      savePRProgress(prUrl, newProgress, selectedStage);
+    }
+  };
+
   return (
     <Routes>
       <Route path="/callback" element={<div>Handling OAuth callback...</div>} />
@@ -295,9 +311,7 @@ useEffect(() => {
                         stages={stages}
                         onProgressChange={handleProgressChange}
                         onProgressChangeComplete={handleProgressComplete}
-                        onStageChange={(stage) => {
-                          setCurrentStage(stage);
-                        }}
+                        onStageChange={handleStageChange}
                       />
                     )}
 

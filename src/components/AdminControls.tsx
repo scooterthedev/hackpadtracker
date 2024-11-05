@@ -39,6 +39,11 @@ const AdminControls: React.FC<AdminControlsProps> = ({
     onProgressChangeComplete(localProgress);
   };
 
+  const handleStageSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedStage = e.target.value;
+    onStageChange(selectedStage);
+  };
+
   return (
     <div className="space-y-4 border border-blue-500/20 rounded-lg p-4 bg-blue-500/5">
       <div className="flex items-center space-x-2 text-blue-400">
@@ -67,7 +72,7 @@ const AdminControls: React.FC<AdminControlsProps> = ({
           <label className="block text-sm text-gray-400 mb-1">Current Stage</label>
           <select
             value={currentStage}
-            onChange={(e) => onStageChange(e.target.value)}
+            onChange={handleStageSelect}
             className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 text-sm"
           >
             {stages.map((stage) => (
