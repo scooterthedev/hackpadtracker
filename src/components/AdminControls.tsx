@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Lock } from 'lucide-react';
+import { Lock, ChevronDown } from 'lucide-react';
 import { getPRsByStage } from '../api';
 
 interface AdminControlsProps {
@@ -26,6 +26,7 @@ const AdminControls: React.FC<AdminControlsProps> = ({
   const [localProgress, setLocalProgress] = useState(progress);
   const [selectedPRs, setSelectedPRs] = useState<string[]>([]);
   const [stagePRs, setStagePRs] = useState<Array<{ pr_url: string }>>([]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => {
     setLocalProgress(progress);
@@ -34,13 +35,19 @@ const AdminControls: React.FC<AdminControlsProps> = ({
   useEffect(() => {
     const fetchPRsForStage = async () => {
       const prs = await getPRsByStage(currentStage);
-      setStagePRs(prs);
+      const filteredPRs = prs.filter(pr => !prUrls.includes(pr.pr_url));
+      setStagePRs(filteredPRs);
     };
 
     if (currentStage) {
       fetchPRsForStage();
     }
-  }, [currentStage]);
+  }, [currentStage, prUrls]);
+
+  const formatPRNumber = (url: string) => {
+    const prNumber = url.split('/').pop();
+    return `PR: ${prNumber}`;
+  };
 
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(e.target.value);
@@ -51,14 +58,11 @@ const AdminControls: React.FC<AdminControlsProps> = ({
   const handleProgressComplete = async () => {
     const allPRsToUpdate = [...selectedPRs];
     
-    // Add the current PR if it's not already in the selected list
-    if (prUrls.length > 0 && !selectedPRs.includes(prUrls[0])) {
+    if (prUrls.length > 0) {
       allPRsToUpdate.push(prUrls[0]);
     }
 
-    // Format URLs if needed
     const formattedPRs = allPRsToUpdate.map(url => {
-      // Extract PR number from URL
       const prNumber = url.split('/').pop();
       return `https://github.com/hackclub/hackpad/pull/${prNumber}`;
     });
@@ -73,10 +77,16 @@ const AdminControls: React.FC<AdminControlsProps> = ({
   const handleStageSelect = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedStage = e.target.value;
     onStageChange(selectedStage);
-    if (selectedPRs.length > 0) {
+    
+    const allPRsToUpdate = [...selectedPRs];
+    if (prUrls.length > 0) {
+      allPRsToUpdate.push(prUrls[0]);
+    }
+
+    if (allPRsToUpdate.length > 0) {
       const stageIndex = stages.indexOf(selectedStage);
       const newProgress = Math.round((stageIndex / (stages.length - 1)) * 100);
-      await onBulkUpdate(selectedPRs, newProgress, selectedStage);
+      await onBulkUpdate(allPRsToUpdate, newProgress, selectedStage);
     }
   };
 
@@ -100,18 +110,53 @@ const AdminControls: React.FC<AdminControlsProps> = ({
       <div className="space-y-3">
         <div>
           <label className="block text-sm text-gray-400 mb-1">Select PRs to Update</label>
-          <div className="max-h-40 overflow-y-auto space-y-2">
-            {stagePRs.map((pr) => (
-              <div key={pr.pr_url} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={selectedPRs.includes(pr.pr_url)}
-                  onChange={() => handlePRSelection(pr.pr_url)}
-                  className="rounded border-gray-600 bg-gray-700 text-blue-500 focus:ring-blue-500"
-                />
-                <label className="text-sm text-gray-300">{pr.pr_url}</label>
+          
+          {/* Selected PRs display */}
+          {selectedPRs.length > 0 && (
+            <div className="mb-2 space-y-1">
+              {selectedPRs.map(pr => (
+                <div key={pr} className="flex items-center justify-between bg-gray-700/50 px-2 py-1 rounded">
+                  <span className="text-sm text-gray-300">{formatPRNumber(pr)}</span>
+                  <button
+                    onClick={() => handlePRSelection(pr)}
+                    className="text-gray-400 hover:text-red-400"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="w-full flex items-center justify-between bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white"
+            >
+              <span>Select PRs</span>
+              <ChevronDown className={`w-4 h-4 transition-transform ${isDropdownOpen ? 'transform rotate-180' : ''}`} />
+            </button>
+
+            {isDropdownOpen && (
+              <div className="absolute z-10 w-full mt-1 bg-gray-700 border border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                {stagePRs.map((pr) => (
+                  <div
+                    key={pr.pr_url}
+                    className="flex items-center space-x-2 px-3 py-2 hover:bg-gray-600/50 cursor-pointer"
+                    onClick={() => handlePRSelection(pr.pr_url)}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedPRs.includes(pr.pr_url)}
+                      onChange={() => {}}
+                      className="rounded border-gray-600 bg-gray-700 text-blue-500 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-300">{formatPRNumber(pr.pr_url)}</span>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         </div>
 
