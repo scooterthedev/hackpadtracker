@@ -19,6 +19,7 @@ function App() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginError, setLoginError] = useState('');
   const client_secrets = import.meta.env.VITE_CODE;
+  const [prUrls, setPrUrls] = useState<string[]>([]);
 
   const stages = [
     'PR Approved',
@@ -214,6 +215,12 @@ useEffect(() => {
     }
   };
 
+  const handleBulkUpdate = async (selectedPrs: string[], newProgress: number, newStage: string) => {
+    // Call the API to update the selected PRs
+    await savePRProgress(selectedPrs, newProgress, newStage);
+    // Optionally, refresh the state or handle UI updates
+  };
+
   return (
     <Routes>
       <Route path="/callback" element={<div>Handling OAuth callback...</div>} />
@@ -312,6 +319,8 @@ useEffect(() => {
                         onProgressChange={handleProgressChange}
                         onProgressChangeComplete={handleProgressComplete}
                         onStageChange={handleStageChange}
+                        prUrls={prUrls}
+                        onBulkUpdate={handleBulkUpdate}
                       />
                     )}
 

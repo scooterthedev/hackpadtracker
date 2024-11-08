@@ -8,6 +8,8 @@ interface AdminControlsProps {
   onProgressChange: (progress: number) => void;
   onProgressChangeComplete: (progress: number) => void;
   onStageChange: (stage: string) => void;
+  prUrls: string[];
+  onBulkUpdate: (selectedPrs: string[], newProgress: number, newStage: string) => void;
 }
 
 const AdminControls: React.FC<AdminControlsProps> = ({
@@ -17,8 +19,11 @@ const AdminControls: React.FC<AdminControlsProps> = ({
   onProgressChange,
   onProgressChangeComplete,
   onStageChange,
+  prUrls,
+  onBulkUpdate,
 }) => {
   const [localProgress, setLocalProgress] = useState(progress);
+  const [selectedPrs, setSelectedPrs] = useState<string[]>([]);
   const isDraggingRef = useRef(false);
 
   useEffect(() => {
@@ -42,6 +47,16 @@ const AdminControls: React.FC<AdminControlsProps> = ({
   const handleStageSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedStage = e.target.value;
     onStageChange(selectedStage);
+  };
+
+  const handleCheckboxChange = (prUrl: string) => {
+    setSelectedPrs((prev) =>
+      prev.includes(prUrl) ? prev.filter((url) => url !== prUrl) : [...prev, prUrl]
+    );
+  };
+
+  const handleBulkUpdate = () => {
+    onBulkUpdate(selectedPrs, localProgress, currentStage);
   };
 
   return (
@@ -82,6 +97,28 @@ const AdminControls: React.FC<AdminControlsProps> = ({
             ))}
           </select>
         </div>
+
+        <div>
+          <h4 className="text-sm text-gray-400 mb-1">Select PRs to Update</h4>
+          {prUrls.map((prUrl) => (
+            <div key={prUrl} className="flex items-center">
+              <input
+                type="checkbox"
+                checked={selectedPrs.includes(prUrl)}
+                onChange={() => handleCheckboxChange(prUrl)}
+                className="mr-2"
+              />
+              <span className="text-gray-300">{prUrl}</span>
+            </div>
+          ))}
+        </div>
+
+        <button
+          onClick={handleBulkUpdate}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg"
+        >
+          Update Selected PRs
+        </button>
       </div>
     </div>
   );
