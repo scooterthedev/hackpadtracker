@@ -8,63 +8,42 @@ interface StatusQueueProps {
 const StatusQueue: React.FC<StatusQueueProps> = ({ stage }) => {
   const [count, setCount] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchQueueCount = useCallback(async () => {
-    console.log('🔄 Fetching queue count for stage:', stage);
-    
     if (!stage) {
-      console.log('⚠️ No stage provided, resetting count');
       setCount(null);
       setIsLoading(false);
       return;
     }
 
     try {
-      console.log('📊 Starting database query for stage:', stage);
       setIsLoading(true);
+      setError(null);
       
-      const { data, error, count: queueCount } = await supabase
+      const { count: queueCount, error } = await supabase
         .from('pr_progress')
         .select('*', { count: 'exact', head: true })
         .eq('current_stage', stage)
-        .not('progress', 'eq', 100);
+        .not('progress', 'eq', 100)
+        .throwOnError();
       
-      console.log('📥 Query response:', {
-        count: queueCount,
-        error: error || 'None',
-        data: data?.length
-      });
+      if (error) throw error;
       
-      if (error) {
-        console.error('❌ Error fetching queue count:', {
-          error,
-          stage: stage,
-          errorMessage: error.message,
-          errorDetails: error.details
-        });
-        return;
-      }
-      
-      console.log('✅ Successfully updated count for stage:', stage, 'Count:', queueCount);
       setCount(queueCount || 0);
     } catch (error) {
-      console.error('💥 Unexpected error in fetchQueueCount:', {
-        error,
-        stage: stage,
-        errorMessage: error instanceof Error ? error.message : 'Unknown error'
-      });
+      console.error('Error fetching queue count:', error);
+      setError('Failed to fetch queue count');
+      setCount(null);
     } finally {
-      console.log('🏁 Finished loading state for stage:', stage);
       setIsLoading(false);
     }
   }, [stage]);
 
   useEffect(() => {
-    console.log('🎬 StatusQueue effect triggered for stage:', stage);
     fetchQueueCount();
 
     if (stage) {
-      console.log('📡 Setting up realtime subscription for stage:', stage);
       const subscription = supabase
         .channel('pr_progress_changes')
         .on(
@@ -73,35 +52,36 @@ const StatusQueue: React.FC<StatusQueueProps> = ({ stage }) => {
             event: '*',
             schema: 'public',
             table: 'pr_progress',
-            filter: `current_stage=eq.${stage}`
+            filter: `current_stage=eq.${stage}`,
           },
-          (payload) => {
-            console.log('🔔 Realtime update received:', {
-              event: payload.eventType,
-              stage: stage,
-              payload
-            });
+          () => {
             fetchQueueCount();
           }
         )
-        .subscribe((status) => {
-          console.log('📡 Subscription status:', status);
-        });
+        .subscribe();
 
       return () => {
-        console.log('📴 Cleaning up subscription for stage:', stage);
         supabase.removeChannel(subscription);
       };
     }
   }, [stage, fetchQueueCount]);
 
-  if (!stage) {
-    console.log('⏭️ Rendering null - no stage provided');
-    return null;
+  if (!stage) return null;
+
+  if (error) {
+    return (
+      <div className="mt-2 px-3 py-1.5 bg-red-900/50 rounded-lg border border-red-700">
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 rounded-full bg-red-400" />
+          <span className="text-sm font-medium text-red-300">
+            {error}
+          </span>
+        </div>
+      </div>
+    );
   }
 
   if (isLoading) {
-    console.log('⌛ Rendering loading state for stage:', stage);
     return (
       <div className="mt-2 px-3 py-1.5 bg-gray-700/50 rounded-lg border border-gray-700">
         <div className="flex items-center space-x-2">
@@ -115,7 +95,6 @@ const StatusQueue: React.FC<StatusQueueProps> = ({ stage }) => {
   }
 
   if (count === 0) {
-    console.log('0️⃣ Rendering empty queue state for stage:', stage);
     return (
       <div className="mt-2 px-3 py-1.5 bg-gray-700/50 rounded-lg border border-gray-700">
         <div className="flex items-center space-x-2">
@@ -128,7 +107,6 @@ const StatusQueue: React.FC<StatusQueueProps> = ({ stage }) => {
     );
   }
 
-  console.log('✨ Rendering normal state - Count:', count, 'Stage:', stage);
   return (
     <div className="mt-2 px-3 py-1.5 bg-gray-700/50 rounded-lg border border-gray-700">
       <div className="flex items-center space-x-2">
