@@ -56,8 +56,15 @@ const AdminControls: React.FC<AdminControlsProps> = ({
       allPRsToUpdate.push(prUrls[0]);
     }
 
-    if (allPRsToUpdate.length > 0) {
-      await onBulkUpdate(allPRsToUpdate, localProgress, currentStage);
+    // Format URLs if needed
+    const formattedPRs = allPRsToUpdate.map(url => {
+      // Extract PR number from URL
+      const prNumber = url.split('/').pop();
+      return `https://github.com/hackclub/hackpad/pull/${prNumber}`;
+    });
+
+    if (formattedPRs.length > 0) {
+      await onBulkUpdate(formattedPRs, localProgress, currentStage);
     } else {
       await onProgressChangeComplete(localProgress);
     }
