@@ -7,9 +7,11 @@ interface StatusQueueProps {
 
 const StatusQueue: React.FC<StatusQueueProps> = ({ stage }) => {
   const [count, setCount] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchQueueCount = useCallback(async () => {
     try {
+      setIsLoading(true);
       const { error, count: queueCount } = await supabase
         .from('pr_progress')
         .select('*', { count: 'exact' })
@@ -23,6 +25,8 @@ const StatusQueue: React.FC<StatusQueueProps> = ({ stage }) => {
       setCount(queueCount);
     } catch (error) {
       console.error('Error in fetchQueueCount:', error);
+    } finally {
+      setIsLoading(false);
     }
   }, [stage]);
 
@@ -47,7 +51,33 @@ const StatusQueue: React.FC<StatusQueueProps> = ({ stage }) => {
     };
   }, [stage, fetchQueueCount]);
 
-  if (!count) return null;
+  if (isLoading) {
+    return (
+      <div className="mt-2 px-3 py-1.5 bg-gray-700/50 rounded-lg border border-gray-700">
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+          <span className="text-sm font-medium text-gray-300">
+            Loading...
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  if (count === 0) {
+    return (
+      <div className="mt-2 px-3 py-1.5 bg-gray-700/50 rounded-lg border border-gray-700">
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 rounded-full bg-gray-400" />
+          <span className="text-sm font-medium text-gray-300">
+            No PRs in this stage
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  if (count === null) return null;
 
   return (
     <div className="mt-2 px-3 py-1.5 bg-gray-700/50 rounded-lg border border-gray-700">
