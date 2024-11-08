@@ -21,6 +21,7 @@ const AdminControls: React.FC<AdminControlsProps> = ({
   onProgressChangeComplete,
   onStageChange,
   onBulkUpdate,
+  prUrls,
 }) => {
   const [localProgress, setLocalProgress] = useState(progress);
   const [selectedPRs, setSelectedPRs] = useState<string[]>([]);
@@ -48,8 +49,15 @@ const AdminControls: React.FC<AdminControlsProps> = ({
   };
 
   const handleProgressComplete = async () => {
-    if (selectedPRs.length > 0) {
-      await onBulkUpdate(selectedPRs, localProgress, currentStage);
+    const allPRsToUpdate = [...selectedPRs];
+    
+    // Add the current PR if it's not already in the selected list
+    if (prUrls.length > 0 && !selectedPRs.includes(prUrls[0])) {
+      allPRsToUpdate.push(prUrls[0]);
+    }
+
+    if (allPRsToUpdate.length > 0) {
+      await onBulkUpdate(allPRsToUpdate, localProgress, currentStage);
     } else {
       await onProgressChangeComplete(localProgress);
     }
