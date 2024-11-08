@@ -21,31 +21,22 @@ const StatusQueue: React.FC<StatusQueueProps> = ({ stage }) => {
     try {
       setIsLoading(true);
       setError(null);
-      
-      // First get the current stage
-      const { data: stageData, error: stageError } = await supabase
-        .from('pr_progress')
-        .select('current_stage')
-        .eq('current_stage', stage)
-        .single();
 
-      if (stageError) throw stageError;
-      
-      if (stageData) {
-        setCurrentStage(stageData.current_stage);
+      const { data, count: queueCount, error } = await supabase
+        .from('pr_progress')
+        .select('current_stage', { count: 'exact' })
+        .eq('current_stage', stage)
+        .not('progress', 'eq', 100);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setCurrentStage(data[0].current_stage);
+        setCount(queueCount || 0);
+      } else {
+        setCurrentStage(stage);
+        setCount(0);
       }
-
-      // Then get the count for that stage
-      const { count: queueCount, error: countError } = await supabase
-        .from('pr_progress')
-        .select('*', { count: 'exact', head: true })
-        .eq('current_stage', stage)
-        .not('progress', 'eq', 100)
-        .throwOnError();
-      
-      if (countError) throw countError;
-      
-      setCount(queueCount || 0);
     } catch (error) {
       console.error('Error fetching queue count:', error);
       setError('Failed to fetch queue count');
@@ -58,27 +49,25 @@ const StatusQueue: React.FC<StatusQueueProps> = ({ stage }) => {
   useEffect(() => {
     fetchQueueCount();
 
-    if (stage) {
-      const subscription = supabase
-        .channel('pr_progress_changes')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'pr_progress',
-            filter: `current_stage=eq.${stage}`,
-          },
-          () => {
-            fetchQueueCount();
-          }
-        )
-        .subscribe();
+    const subscription = supabase
+      .channel('pr_progress_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'pr_progress',
+          filter: `current_stage=eq.${stage}`,
+        },
+        () => {
+          fetchQueueCount();
+        }
+      )
+      .subscribe();
 
-      return () => {
-        supabase.removeChannel(subscription);
-      };
-    }
+    return () => {
+      supabase.removeChannel(subscription);
+    };
   }, [stage, fetchQueueCount]);
 
   if (!stage) return null;
@@ -88,9 +77,7 @@ const StatusQueue: React.FC<StatusQueueProps> = ({ stage }) => {
       <div className="mt-2 px-3 py-1.5 bg-red-900/50 rounded-lg border border-red-700">
         <div className="flex items-center space-x-2">
           <div className="w-2 h-2 rounded-full bg-red-400" />
-          <span className="text-sm font-medium text-red-300">
-            {error}
-          </span>
+          <span className="text-sm font-medium text-red-300">{error}</span>
         </div>
       </div>
     );
@@ -101,9 +88,7 @@ const StatusQueue: React.FC<StatusQueueProps> = ({ stage }) => {
       <div className="mt-2 px-3 py-1.5 bg-gray-700/50 rounded-lg border border-gray-700">
         <div className="flex items-center space-x-2">
           <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-          <span className="text-sm font-medium text-gray-300">
-            Loading...
-          </span>
+          <span className="text-sm font-medium text-gray-300">Loading...</span>
         </div>
       </div>
     );
