@@ -9,6 +9,7 @@ const StatusQueue: React.FC<StatusQueueProps> = ({ stage }) => {
   const [count, setCount] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentStage, setCurrentStage] = useState<string | null>(null);
 
   const fetchQueueCount = useCallback(async () => {
     if (!stage) {
@@ -21,14 +22,28 @@ const StatusQueue: React.FC<StatusQueueProps> = ({ stage }) => {
       setIsLoading(true);
       setError(null);
       
-      const { count: queueCount, error } = await supabase
+      // First get the current stage
+      const { data: stageData, error: stageError } = await supabase
+        .from('pr_progress')
+        .select('current_stage')
+        .eq('current_stage', stage)
+        .single();
+
+      if (stageError) throw stageError;
+      
+      if (stageData) {
+        setCurrentStage(stageData.current_stage);
+      }
+
+      // Then get the count for that stage
+      const { count: queueCount, error: countError } = await supabase
         .from('pr_progress')
         .select('*', { count: 'exact', head: true })
         .eq('current_stage', stage)
         .not('progress', 'eq', 100)
         .throwOnError();
       
-      if (error) throw error;
+      if (countError) throw countError;
       
       setCount(queueCount || 0);
     } catch (error) {
@@ -112,7 +127,7 @@ const StatusQueue: React.FC<StatusQueueProps> = ({ stage }) => {
       <div className="flex items-center space-x-2">
         <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
         <span className="text-sm font-medium text-gray-300">
-          {count} {count === 1 ? 'PR is' : 'PRs are'} currently in this stage
+          {count} {count === 1 ? 'PR is' : 'PRs are'} currently in {currentStage || stage}
         </span>
       </div>
     </div>
