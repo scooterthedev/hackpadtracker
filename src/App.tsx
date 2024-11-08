@@ -119,7 +119,7 @@ useEffect(() => {
               'Content-Type': 'application/x-www-form-urlencoded',
             },
             body: new URLSearchParams({
-              client_id: '2210535565.7957522136834',
+              client_id: import.meta.env.VITE_CLIENT_ID,
               client_secret: import.meta.env.VITE_CODE,
               code,
               redirect_uri: import.meta.env.VITE_URL + '/callback',

@@ -11,7 +11,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, error }) => {
 
 const handleSlackLogin = async () => {
   setLoading(true);
-  const clientId = '2210535565.7957522136834';
+  const clientId = import.meta.env.VITE_CLIENT_ID;
   const redirectUri = import.meta.env.VITE_URL + '/callback';
   const scope = 'users.profile:read';
   const authUrl = `https://slack.com/oauth/v2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}`;
