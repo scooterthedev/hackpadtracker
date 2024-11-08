@@ -58,6 +58,7 @@ This is a PR tracker for Hack Club's YSWS Hackpad. This project has been a major
     3. *VITE_CODE* - (This is the secret token for your slack bot **DO NOT SHARE**) - set it to be the client secret found under your [slack bot](https://api.slack.com/apps) *Settings* -> *Basic Information*.
     4. *VITE_SUPABASE_ANON_KEY* - (This will be your supabase key) - set this to be the value from the *NEXT_PUBLIC_SUPABASE_ANON_KEY* that you took a note of earlier on.
     5. *VITE_SUPABASE_URL* - (This will be your supabase url) - set this to be the value from the *NEXT_PUBLIC_SUPABASE_URL* that you took a note of earlier on.
+    6. *VITE_GITHUB_API_URL* - (This is your repo's url eg. https://api.github.com/repos/hackclub/hackpad/pulls) - set this to be the github api link for your repo eg. the link before just with your own repo name.
 
 12. Save everything, and if your deployment has already been pushed do the steps below, and if not head over to step 13
 
