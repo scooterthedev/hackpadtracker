@@ -13,7 +13,7 @@ export const isValidGitHubPRUrl = (url: string): boolean => {
 
 export const checkPRStatus = async (prNumber: string): Promise<{isValid: boolean; isMerged: boolean}> => {
   try {
-    const response = await fetch(`https://api.github.com/repos/hackclub/hackpad/pulls/${prNumber}`);
+    const response = await fetch(import.meta.env.VITE_GITHUB_API_URL + `/${prNumber}`);
     const data = await response.json();
     
     if (response.status === 404) {
