@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Lock } from 'lucide-react';
+import { getPRProgressData } from '../utils/storage';
 
 interface AdminControlsProps {
   progress: number;
@@ -24,6 +25,7 @@ const AdminControls: React.FC<AdminControlsProps> = ({
 }) => {
   const [localProgress, setLocalProgress] = useState(progress);
   const [selectedPrs, setSelectedPrs] = useState<string[]>([]);
+  const [availablePrs, setAvailablePrs] = useState<string[]>([]);
   const isDraggingRef = useRef(false);
 
   useEffect(() => {
@@ -31,6 +33,12 @@ const AdminControls: React.FC<AdminControlsProps> = ({
       setLocalProgress(progress);
     }
   }, [progress]);
+
+  useEffect(() => {
+    // Load PRs from local storage
+    const prData = getPRProgressData();
+    setAvailablePrs(Object.keys(prData)); // Set available PRs from local storage
+  }, []);
 
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(e.target.value);
@@ -65,7 +73,7 @@ const AdminControls: React.FC<AdminControlsProps> = ({
         <Lock className="w-4 h-4" />
         <h3 className="text-sm font-medium">Admin Controls</h3>
       </div>
-      
+
       <div className="space-y-3">
         <div>
           <label className="block text-sm text-gray-400 mb-1">Progress</label>
@@ -100,7 +108,7 @@ const AdminControls: React.FC<AdminControlsProps> = ({
 
         <div>
           <h4 className="text-sm text-gray-400 mb-1">Select PRs to Update</h4>
-          {prUrls.map((prUrl) => (
+          {availablePrs.map((prUrl) => (
             <div key={prUrl} className="flex items-center">
               <input
                 type="checkbox"
@@ -108,8 +116,15 @@ const AdminControls: React.FC<AdminControlsProps> = ({
                 onChange={() => handleCheckboxChange(prUrl)}
                 className="mr-2"
               />
-              <span className="text-gray-300">{prUrl}</span>
+              <label className="text-white">{prUrl}</label>
             </div>
+          ))}
+        </div>
+
+        <div>
+          <h4 className="text-sm text-gray-400 mb-1">Available PR URLs</h4>
+          {prUrls.map((url) => (
+            <div key={url} className="text-white">{url}</div>
           ))}
         </div>
 

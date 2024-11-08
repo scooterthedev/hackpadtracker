@@ -216,7 +216,6 @@ useEffect(() => {
   };
 
   const handleBulkUpdate = async (selectedPrs: string[], newProgress: number, newStage: string) => {
-    // Call the API to update the selected PRs
     await savePRProgress(selectedPrs, newProgress, newStage);
     // Optionally, refresh the state or handle UI updates
   };
@@ -308,7 +307,7 @@ useEffect(() => {
                         <span className="text-sm font-medium text-blue-400">{currentStage}</span>
                         <span className="text-sm text-gray-400">{Math.round(progress)}%</span>
                       </div>
-                      <ProgressBar progress={progress} />
+                      <ProgressBar progress={progress} currentStage={currentStage} />
                     </div>
 
                     {isAdmin && (
