@@ -8,6 +8,7 @@ import { isValidGitHubPRUrl } from './utils/validation';
 import { savePRProgress, getPRProgress } from './api';
 import Cookies from 'js-cookie';
 import { savePRProgressLocally } from './utils/storage';
+import { checkPRStatus } from './utils/validation';
 
 function App() {
   const [prUrl, setPrUrl] = useState('');
@@ -152,21 +153,41 @@ useEffect(() => {
       return;
     }
 
+    const prNumber = prUrl.split('/').pop() || '';
+    const { isValid: isPRValid, isMerged } = await checkPRStatus(prNumber);
+
+    if (!isPRValid) {
+      setIsValid(false);
+      return;
+    }
+
     setIsValid(true);
     setIsSubmitted(true);
 
     const savedProgress = await getPRProgress(prUrl);
+    let initialProgress = 0;
+    let initialStage = stages[0];
+
     if (savedProgress) {
-      setProgress(savedProgress.progress);
-      setCurrentStage(savedProgress.current_stage);
-      // Save to local storage after initial fetch
-      savePRProgressLocally(prUrl, savedProgress.progress, savedProgress.current_stage);
+      if (isMerged && savedProgress.progress < 20) {
+        initialProgress = 20;
+        initialStage = stages[Math.floor((20 / 100) * (stages.length - 1))];
+        await savePRProgress(prUrl, initialProgress, initialStage);
+      } else {
+        initialProgress = savedProgress.progress;
+        initialStage = savedProgress.current_stage;
+      }
     } else {
-      setProgress(0);
-      setCurrentStage(stages[0]);
-      savePRProgressLocally(prUrl, 0, stages[0]);
-      await savePRProgress(prUrl, 0, stages[0]);
+      if (isMerged) {
+        initialProgress = 20;
+        initialStage = stages[Math.floor((20 / 100) * (stages.length - 1))];
+      }
+      await savePRProgress(prUrl, initialProgress, initialStage);
     }
+
+    setProgress(initialProgress);
+    setCurrentStage(initialStage);
+    savePRProgressLocally(prUrl, initialProgress, initialStage);
   };
 
   const handleLogout = () => {
