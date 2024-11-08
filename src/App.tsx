@@ -31,29 +31,40 @@ function App() {
 
   const navigate = useNavigate();
 
-// Load saved progress when PR URL is submitted
-useEffect(() => {
-  const loadProgress = async () => {
-    if (isSubmitted && prUrl) {
-      // First check local storage
-      const localProgress = getPRProgress(prUrl);
-      if (localProgress) {
-        setProgress(localProgress.progress);
-        setCurrentStage(localProgress.currentStage);
-      } else {
-        // If not in local storage, fetch from DB
-        const savedProgress = await getPRProgress(prUrl);
-        if (savedProgress) {
-          setProgress(savedProgress.progress);
-          setCurrentStage(savedProgress.current_stage);
-          // Save to local storage for future use
-          savePRProgressLocally(prUrl, savedProgress.progress, savedProgress.current_stage);
-        }
-      }
+  // Fetch all PR URLs from the database
+  const fetchAllPRUrls = async () => {
+    const { data, error } = await getPRProgress(prUrl);
+    if (error) {
+      console.error('Error fetching PR URLs:', error);
+    } else {
+      setPrUrls(data.map((pr: { pr_url: string }) => pr.pr_url)); // Specify the type of pr
     }
   };
-  loadProgress();
-}, [isSubmitted, prUrl]);
+
+  useEffect(() => {
+    fetchAllPRUrls();
+  }, []);
+
+  // Load saved progress when PR URL is submitted
+  useEffect(() => {
+    const loadProgress = async () => {
+      if (isSubmitted && prUrl) {
+        const localProgress = getPRProgress(prUrl);
+        if (localProgress) {
+          setProgress(localProgress.progress);
+          setCurrentStage(localProgress.currentStage);
+        } else {
+          const savedProgress = await getPRProgress(prUrl);
+          if (savedProgress) {
+            setProgress(savedProgress.progress);
+            setCurrentStage(savedProgress.current_stage);
+            savePRProgressLocally(prUrl, savedProgress.progress, savedProgress.current_stage);
+          }
+        }
+      }
+    };
+    loadProgress();
+  }, [isSubmitted, prUrl]);
 
   const verifyUser = useCallback(async (token: string, userId: string) => {
     const authorizedUsers = [import.meta.env.VITE_AUTHUSERS1, import.meta.env.VITE_AUTHUSERS2, import.meta.env.VITE_AUTHUSERS3];
@@ -216,7 +227,9 @@ useEffect(() => {
   };
 
   const handleBulkUpdate = async (selectedPrs: string[], newProgress: number, newStage: string) => {
-    await savePRProgress(selectedPrs, newProgress, newStage);
+    for (const pr of selectedPrs) {
+      await savePRProgress(pr, newProgress, newStage); // Call for each individual PR
+    }
     // Optionally, refresh the state or handle UI updates
   };
 
@@ -266,20 +279,18 @@ useEffect(() => {
                         </div>
                         <div className="flex items-center space-x-1">
                           <span className="pl-10 text-gray-400 text-sm">github.com/hackclub/hackpad/pull/</span>
-                          <input
-                            id="pr-number"
-                            name="pr-number"
-                            type="text"
+                          <select
+                            value={prUrl}
+                            onChange={(e) => setPrUrl(e.target.value)}
                             className="w-16 py-1.5 px-2 border border-gray-600 rounded-md bg-gray-700 text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                            placeholder="256"
-                            value={prUrl.replace('https://github.com/hackclub/hackpad/pull/', '')}
-                            onKeyPress={(e) => {
-                              if (!/[0-9]/.test(e.key)) {
-                                e.preventDefault();
-                              }
-                            }}
-                            onChange={(e) => setPrUrl('https://github.com/hackclub/hackpad/pull/' + e.target.value)}
-                          />
+                          >
+                            <option value="">Select a PR</option>
+                            {prUrls.map((url) => (
+                              <option key={url} value={url}>
+                                {url}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                       </div>
                       {!isValid && (

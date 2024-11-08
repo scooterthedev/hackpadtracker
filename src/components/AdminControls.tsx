@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Lock } from 'lucide-react';
-import { getPRProgressData } from '../utils/storage';
+import savePRProgress from '../api/prProgress';
 
 interface AdminControlsProps {
   progress: number;
@@ -21,50 +21,30 @@ const AdminControls: React.FC<AdminControlsProps> = ({
   onProgressChangeComplete,
   onStageChange,
   prUrls,
-  onBulkUpdate,
 }) => {
   const [localProgress, setLocalProgress] = useState(progress);
-  const [selectedPrs, setSelectedPrs] = useState<string[]>([]);
-  const [availablePrs, setAvailablePrs] = useState<string[]>([]);
-  const isDraggingRef = useRef(false);
+  const [selectedPrUrl, setSelectedPrUrl] = useState<string>('');
 
   useEffect(() => {
-    if (!isDraggingRef.current) {
-      setLocalProgress(progress);
-    }
+    setLocalProgress(progress);
   }, [progress]);
-
-  useEffect(() => {
-    // Load PRs from local storage
-    const prData = getPRProgressData();
-    setAvailablePrs(Object.keys(prData)); // Set available PRs from local storage
-  }, []);
 
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(e.target.value);
-    isDraggingRef.current = true;
     setLocalProgress(value);
     onProgressChange(value);
   };
 
-  const handleProgressComplete = () => {
-    isDraggingRef.current = false;
+  const handleProgressComplete = async () => {
     onProgressChangeComplete(localProgress);
+    if (selectedPrUrl) {
+      await savePRProgress(selectedPrUrl, localProgress, currentStage);
+    }
   };
 
   const handleStageSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedStage = e.target.value;
     onStageChange(selectedStage);
-  };
-
-  const handleCheckboxChange = (prUrl: string) => {
-    setSelectedPrs((prev) =>
-      prev.includes(prUrl) ? prev.filter((url) => url !== prUrl) : [...prev, prUrl]
-    );
-  };
-
-  const handleBulkUpdate = () => {
-    onBulkUpdate(selectedPrs, localProgress, currentStage);
   };
 
   return (
@@ -75,6 +55,22 @@ const AdminControls: React.FC<AdminControlsProps> = ({
       </div>
 
       <div className="space-y-3">
+        <div>
+          <label className="block text-sm text-gray-400 mb-1">Select PR URL</label>
+          <select
+            value={selectedPrUrl}
+            onChange={(e) => setSelectedPrUrl(e.target.value)}
+            className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 text-sm"
+          >
+            <option value="">Select a PR</option>
+            {prUrls.map((url) => (
+              <option key={url} value={url}>
+                {url}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div>
           <label className="block text-sm text-gray-400 mb-1">Progress</label>
           <input
@@ -105,35 +101,6 @@ const AdminControls: React.FC<AdminControlsProps> = ({
             ))}
           </select>
         </div>
-
-        <div>
-          <h4 className="text-sm text-gray-400 mb-1">Select PRs to Update</h4>
-          {availablePrs.map((prUrl) => (
-            <div key={prUrl} className="flex items-center">
-              <input
-                type="checkbox"
-                checked={selectedPrs.includes(prUrl)}
-                onChange={() => handleCheckboxChange(prUrl)}
-                className="mr-2"
-              />
-              <label className="text-white">{prUrl}</label>
-            </div>
-          ))}
-        </div>
-
-        <div>
-          <h4 className="text-sm text-gray-400 mb-1">Available PR URLs</h4>
-          {prUrls.map((url) => (
-            <div key={url} className="text-white">{url}</div>
-          ))}
-        </div>
-
-        <button
-          onClick={handleBulkUpdate}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg"
-        >
-          Update Selected PRs
-        </button>
       </div>
     </div>
   );
