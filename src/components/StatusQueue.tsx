@@ -26,8 +26,7 @@ const StatusQueue: React.FC<StatusQueueProps> = ({ current_stage }) => {
       const { data, error, count: queueCount } = await supabase
         .from('pr_progress')
         .select('*', { count: 'exact', head: true })
-        .eq('current_stage', current_stage)
-        .not('progress', 'eq', 100);
+        .eq('current_stage', current_stage);
       
       console.log('📥 Query response:', {
         count: queueCount,
