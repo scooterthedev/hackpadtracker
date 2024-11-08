@@ -3,16 +3,18 @@ import { supabase } from '../utils/supabaseClient';
 
 interface StatusQueueProps {
   stage: string;
+  defaultStage?: string;
 }
 
-const StatusQueue: React.FC<StatusQueueProps> = ({ stage }) => {
+const StatusQueue: React.FC<StatusQueueProps> = ({ stage, defaultStage = 'PR Approved' }) => {
   const [count, setCount] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchQueueCount = useCallback(async () => {
-    console.log('🔄 Fetching queue count for stage:', stage);
+    const currentStage = stage || defaultStage;
+    console.log('🔄 Fetching queue count for stage:', currentStage);
     
-    if (!stage) {
+    if (!currentStage) {
       console.log('⚠️ No stage provided, resetting count');
       setCount(null);
       setIsLoading(false);
@@ -20,13 +22,13 @@ const StatusQueue: React.FC<StatusQueueProps> = ({ stage }) => {
     }
 
     try {
-      console.log('📊 Starting database query for stage:', stage);
+      console.log('📊 Starting database query for stage:', currentStage);
       setIsLoading(true);
       
       const { data, error, count: queueCount } = await supabase
         .from('pr_progress')
         .select('*', { count: 'exact', head: true })
-        .eq('current_stage', stage)
+        .eq('current_stage', currentStage)
         .not('progress', 'eq', 100);
       
       console.log('📥 Query response:', {
@@ -38,26 +40,26 @@ const StatusQueue: React.FC<StatusQueueProps> = ({ stage }) => {
       if (error) {
         console.error('❌ Error fetching queue count:', {
           error,
-          stage,
+          stage: currentStage,
           errorMessage: error.message,
           errorDetails: error.details
         });
         return;
       }
       
-      console.log('✅ Successfully updated count for stage:', stage, 'Count:', queueCount);
+      console.log('✅ Successfully updated count for stage:', currentStage, 'Count:', queueCount);
       setCount(queueCount || 0);
     } catch (error) {
       console.error('💥 Unexpected error in fetchQueueCount:', {
         error,
-        stage,
+        stage: currentStage,
         errorMessage: error instanceof Error ? error.message : 'Unknown error'
       });
     } finally {
-      console.log('🏁 Finished loading state for stage:', stage);
+      console.log('🏁 Finished loading state for stage:', currentStage);
       setIsLoading(false);
     }
-  }, [stage]);
+  }, [stage, defaultStage]);
 
   useEffect(() => {
     console.log('🎬 StatusQueue effect triggered for stage:', stage);
