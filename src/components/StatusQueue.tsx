@@ -74,10 +74,10 @@ const StatusQueue: React.FC<StatusQueueProps> = ({ stage }) => {
 
   if (error) {
     return (
-      <div className="mt-2 px-3 py-1.5 bg-red-900/50 rounded-lg border border-red-700">
+      <div className="mt-2 bg-gray-800/50 rounded-lg p-3">
         <div className="flex items-center space-x-2">
-          <div className="w-2 h-2 rounded-full bg-red-400" />
-          <span className="text-sm font-medium text-red-300">{error}</span>
+          <div className="w-2 h-2 rounded-full bg-red-500" />
+          <span className="text-sm text-red-400">{error}</span>
         </div>
       </div>
     );
@@ -85,10 +85,10 @@ const StatusQueue: React.FC<StatusQueueProps> = ({ stage }) => {
 
   if (isLoading) {
     return (
-      <div className="mt-2 px-3 py-1.5 bg-gray-700/50 rounded-lg border border-gray-700">
+      <div className="mt-2 bg-gray-800/50 rounded-lg p-3">
         <div className="flex items-center space-x-2">
-          <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-          <span className="text-sm font-medium text-gray-300">Loading...</span>
+          <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+          <span className="text-sm text-gray-400">Loading...</span>
         </div>
       </div>
     );
@@ -96,10 +96,10 @@ const StatusQueue: React.FC<StatusQueueProps> = ({ stage }) => {
 
   if (count === 0) {
     return (
-      <div className="mt-2 px-3 py-1.5 bg-gray-700/50 rounded-lg border border-gray-700">
+      <div className="mt-2 bg-gray-800/50 rounded-lg p-3">
         <div className="flex items-center space-x-2">
-          <div className="w-2 h-2 rounded-full bg-gray-400" />
-          <span className="text-sm font-medium text-gray-300">
+          <div className="w-2 h-2 rounded-full bg-gray-500" />
+          <span className="text-sm text-gray-400">
             No PRs in this stage
           </span>
         </div>
@@ -108,11 +108,11 @@ const StatusQueue: React.FC<StatusQueueProps> = ({ stage }) => {
   }
 
   return (
-    <div className="mt-2 px-3 py-1.5 bg-gray-700/50 rounded-lg border border-gray-700">
+    <div className="mt-2 bg-gray-800/50 rounded-lg p-3">
       <div className="flex items-center space-x-2">
-        <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-        <span className="text-sm font-medium text-gray-300">
-          {count} {count === 1 ? 'PR is' : 'PRs are'} currently in {currentStage || stage}
+        <div className="w-2 h-2 rounded-full bg-blue-500" />
+        <span className="text-sm text-gray-400">
+          {count} {count === 1 ? 'PR is' : 'PRs are'} currently in this stage
         </span>
       </div>
     </div>
