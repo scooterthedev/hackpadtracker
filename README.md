@@ -8,7 +8,7 @@ This is a PR tracker for Hack Club's YSWS Hackpad. This project has been a major
 
 2. Run `npm install` to install all the necessary dependencies.
 
-3. Go to vercel, and link up your repository to a new vercel project.
+3. Go to vercel, and link up your repository to a new vercel project. Make sure under *Framework Perset* to set it to *Vite*, or else the deployment will fail.
 
 4. Create a new slack bot for auth at https://api.slack.com/apps under the Hack Club workspace.
 
