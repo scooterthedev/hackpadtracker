@@ -11,6 +11,7 @@ interface AdminControlsProps {
   onStageChange: (selectedStage: string) => void;
   prUrls: string[];
   onBulkUpdate: (selectedPrs: string[], newProgress: number, newStage: string) => Promise<void>;
+  currentPrUrl: string;
 }
 
 const AdminControls: React.FC<AdminControlsProps> = ({
@@ -22,6 +23,7 @@ const AdminControls: React.FC<AdminControlsProps> = ({
   onStageChange,
   onBulkUpdate,
   prUrls,
+  currentPrUrl,
 }) => {
   const [localProgress, setLocalProgress] = useState(progress);
   const [selectedPRs, setSelectedPRs] = useState<string[]>([]);
@@ -58,17 +60,12 @@ const AdminControls: React.FC<AdminControlsProps> = ({
   const handleProgressComplete = async () => {
     const allPRsToUpdate = [...selectedPRs];
     
-    if (prUrls.length > 0) {
-      allPRsToUpdate.push(prUrls[0]);
+    if (!allPRsToUpdate.includes(currentPrUrl)) {
+      allPRsToUpdate.push(currentPrUrl);
     }
 
-    const formattedPRs = allPRsToUpdate.map(url => {
-      const prNumber = url.split('/').pop();
-      return `https://github.com/hackclub/hackpad/pull/${prNumber}`;
-    });
-
-    if (formattedPRs.length > 0) {
-      await onBulkUpdate(formattedPRs, localProgress, currentStage);
+    if (allPRsToUpdate.length > 0) {
+      await onBulkUpdate(allPRsToUpdate, localProgress, currentStage);
     } else {
       await onProgressChangeComplete(localProgress);
     }
@@ -79,8 +76,8 @@ const AdminControls: React.FC<AdminControlsProps> = ({
     onStageChange(selectedStage);
     
     const allPRsToUpdate = [...selectedPRs];
-    if (prUrls.length > 0) {
-      allPRsToUpdate.push(prUrls[0]);
+    if (!allPRsToUpdate.includes(currentPrUrl)) {
+      allPRsToUpdate.push(currentPrUrl);
     }
 
     if (allPRsToUpdate.length > 0) {

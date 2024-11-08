@@ -316,6 +316,7 @@ useEffect(() => {
                       <AdminControls
                         progress={progress}
                         currentStage={currentStage}
+                        currentPrUrl={prUrl}
                         stages={stages}
                         onProgressChange={handleProgressChange}
                         onProgressChangeComplete={handleProgressComplete}
