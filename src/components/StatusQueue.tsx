@@ -10,36 +10,61 @@ const StatusQueue: React.FC<StatusQueueProps> = ({ stage }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchQueueCount = useCallback(async () => {
+    console.log('🔄 Fetching queue count for stage:', stage);
+    
     if (!stage) {
+      console.log('⚠️ No stage provided, resetting count');
       setCount(null);
       setIsLoading(false);
       return;
     }
 
     try {
+      console.log('📊 Starting database query for stage:', stage);
       setIsLoading(true);
-      const { error, count: queueCount } = await supabase
+      
+      const { data, error, count: queueCount } = await supabase
         .from('pr_progress')
-        .select('*', { count: 'exact' })
-        .eq('current_stage', stage);
+        .select('*', { count: 'exact', head: true })
+        .eq('current_stage', stage)
+        .not('progress', 'eq', 100);
+      
+      console.log('📥 Query response:', {
+        count: queueCount,
+        error: error || 'None',
+        data: data?.length
+      });
       
       if (error) {
-        console.error('Error fetching queue count:', error);
+        console.error('❌ Error fetching queue count:', {
+          error,
+          stage,
+          errorMessage: error.message,
+          errorDetails: error.details
+        });
         return;
       }
       
-      setCount(queueCount);
+      console.log('✅ Successfully updated count for stage:', stage, 'Count:', queueCount);
+      setCount(queueCount || 0);
     } catch (error) {
-      console.error('Error in fetchQueueCount:', error);
+      console.error('💥 Unexpected error in fetchQueueCount:', {
+        error,
+        stage,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error'
+      });
     } finally {
+      console.log('🏁 Finished loading state for stage:', stage);
       setIsLoading(false);
     }
   }, [stage]);
 
   useEffect(() => {
+    console.log('🎬 StatusQueue effect triggered for stage:', stage);
     fetchQueueCount();
 
     if (stage) {
+      console.log('📡 Setting up realtime subscription for stage:', stage);
       const subscription = supabase
         .channel('pr_progress_changes')
         .on(
@@ -47,21 +72,36 @@ const StatusQueue: React.FC<StatusQueueProps> = ({ stage }) => {
           {
             event: '*',
             schema: 'public',
-            table: 'pr_progress'
+            table: 'pr_progress',
+            filter: `current_stage=eq.${stage}`
           },
-          fetchQueueCount
+          (payload) => {
+            console.log('🔔 Realtime update received:', {
+              event: payload.eventType,
+              stage: stage,
+              payload
+            });
+            fetchQueueCount();
+          }
         )
-        .subscribe();
+        .subscribe((status) => {
+          console.log('📡 Subscription status:', status);
+        });
 
       return () => {
-        subscription.unsubscribe();
+        console.log('📴 Cleaning up subscription for stage:', stage);
+        supabase.removeChannel(subscription);
       };
     }
   }, [stage, fetchQueueCount]);
 
-  if (!stage) return null;
+  if (!stage) {
+    console.log('⏭️ Rendering null - no stage provided');
+    return null;
+  }
 
   if (isLoading) {
+    console.log('⌛ Rendering loading state for stage:', stage);
     return (
       <div className="mt-2 px-3 py-1.5 bg-gray-700/50 rounded-lg border border-gray-700">
         <div className="flex items-center space-x-2">
@@ -75,6 +115,7 @@ const StatusQueue: React.FC<StatusQueueProps> = ({ stage }) => {
   }
 
   if (count === 0) {
+    console.log('0️⃣ Rendering empty queue state for stage:', stage);
     return (
       <div className="mt-2 px-3 py-1.5 bg-gray-700/50 rounded-lg border border-gray-700">
         <div className="flex items-center space-x-2">
@@ -87,8 +128,7 @@ const StatusQueue: React.FC<StatusQueueProps> = ({ stage }) => {
     );
   }
 
-  if (count === null) return null;
-
+  console.log('✨ Rendering normal state - Count:', count, 'Stage:', stage);
   return (
     <div className="mt-2 px-3 py-1.5 bg-gray-700/50 rounded-lg border border-gray-700">
       <div className="flex items-center space-x-2">
