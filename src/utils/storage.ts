@@ -6,7 +6,7 @@ interface PRProgress {
 
 const STORAGE_KEY = 'pr-progress-data';
 
-export const savePRProgress = (prUrl: string, progress: number, currentStage: string): void => {
+export const savePRProgressLocally = (prUrl: string, progress: number, currentStage: string): void => {
   const data = getPRProgressData();
   data[prUrl] = {
     prUrl,

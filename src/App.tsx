@@ -7,6 +7,7 @@ import LoginModal from './components/LoginModal';
 import { isValidGitHubPRUrl } from './utils/validation';
 import { savePRProgress, getPRProgress } from './api';
 import Cookies from 'js-cookie';
+import { savePRProgressLocally } from './utils/storage';
 
 function App() {
   const [prUrl, setPrUrl] = useState('');
@@ -33,19 +34,25 @@ function App() {
 useEffect(() => {
   const loadProgress = async () => {
     if (isSubmitted && prUrl) {
-      const savedProgress = await getPRProgress(prUrl);
-      if (savedProgress) {
-        setProgress(savedProgress.progress);
-        setCurrentStage(savedProgress.current_stage);
+      // First check local storage
+      const localProgress = getPRProgress(prUrl);
+      if (localProgress) {
+        setProgress(localProgress.progress);
+        setCurrentStage(localProgress.currentStage);
       } else {
-        setProgress(0);
-        setCurrentStage(stages[0]);
-        await savePRProgress(prUrl, 0, stages[0]);
+        // If not in local storage, fetch from DB
+        const savedProgress = await getPRProgress(prUrl);
+        if (savedProgress) {
+          setProgress(savedProgress.progress);
+          setCurrentStage(savedProgress.current_stage);
+          // Save to local storage for future use
+          savePRProgressLocally(prUrl, savedProgress.progress, savedProgress.current_stage);
+        }
       }
     }
   };
   loadProgress();
-}, [isSubmitted, prUrl, stages]);
+}, [isSubmitted, prUrl]);
 
   const verifyUser = useCallback(async (token: string, userId: string) => {
     const authorizedUsers = [import.meta.env.VITE_AUTHUSERS1, import.meta.env.VITE_AUTHUSERS2, import.meta.env.VITE_AUTHUSERS3];
@@ -151,9 +158,12 @@ useEffect(() => {
     if (savedProgress) {
       setProgress(savedProgress.progress);
       setCurrentStage(savedProgress.current_stage);
+      // Save to local storage after initial fetch
+      savePRProgressLocally(prUrl, savedProgress.progress, savedProgress.current_stage);
     } else {
       setProgress(0);
       setCurrentStage(stages[0]);
+      savePRProgressLocally(prUrl, 0, stages[0]);
       await savePRProgress(prUrl, 0, stages[0]);
     }
   };
@@ -167,11 +177,40 @@ useEffect(() => {
     setProgress(newProgress);
     const newStage = stages[Math.floor((newProgress / 100) * (stages.length - 1))];
     setCurrentStage(newStage);
+    
+    // Always update local storage immediately
+    savePRProgressLocally(prUrl, newProgress, newStage);
   };
 
   const handleProgressComplete = async (newProgress: number) => {
     if (prUrl) {
+      // Sync with DB
       await savePRProgress(prUrl, newProgress, currentStage);
+      
+      // Fetch latest from DB to ensure consistency
+      const latestProgress = await getPRProgress(prUrl);
+      if (latestProgress) {
+        setProgress(latestProgress.progress);
+        setCurrentStage(latestProgress.current_stage);
+        // Update local storage with latest DB data
+        savePRProgressLocally(prUrl, latestProgress.progress, latestProgress.current_stage);
+      }
+    }
+  };
+
+  const handleStageChange = (selectedStage: string) => {
+    const stageIndex = stages.indexOf(selectedStage);
+    const newProgress = Math.round((stageIndex / (stages.length - 1)) * 100);
+    
+    setProgress(newProgress);
+    setCurrentStage(selectedStage);
+    
+    // Update local storage
+    savePRProgressLocally(prUrl, newProgress, selectedStage);
+    
+    // Sync with DB
+    if (prUrl) {
+      savePRProgress(prUrl, newProgress, selectedStage);
     }
   };
 
@@ -272,9 +311,7 @@ useEffect(() => {
                         stages={stages}
                         onProgressChange={handleProgressChange}
                         onProgressChangeComplete={handleProgressComplete}
-                        onStageChange={(stage) => {
-                          setCurrentStage(stage);
-                        }}
+                        onStageChange={handleStageChange}
                       />
                     )}
 
