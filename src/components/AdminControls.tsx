@@ -20,9 +20,10 @@ const AdminControls: React.FC<AdminControlsProps> = ({
   onProgressChange,
   onProgressChangeComplete,
   onStageChange,
+  onBulkUpdate,
 }) => {
   const [localProgress, setLocalProgress] = useState(progress);
-  const [selectedPrUrl, setSelectedPrUrl] = useState<string>('');
+  const [selectedPRs, setSelectedPRs] = useState<string[]>([]);
   const [stagePRs, setStagePRs] = useState<Array<{ pr_url: string }>>([]);
 
   useEffect(() => {
@@ -46,14 +47,32 @@ const AdminControls: React.FC<AdminControlsProps> = ({
     onProgressChange(value);
   };
 
-  const handleProgressComplete = () => {
-    onProgressChangeComplete(localProgress);
+  const handleProgressComplete = async () => {
+    if (selectedPRs.length > 0) {
+      await onBulkUpdate(selectedPRs, localProgress, currentStage);
+    } else {
+      await onProgressChangeComplete(localProgress);
+    }
   };
 
-  const handleStageSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleStageSelect = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedStage = e.target.value;
     onStageChange(selectedStage);
-    setSelectedPrUrl(''); // Reset selected PR when stage changes
+    if (selectedPRs.length > 0) {
+      const stageIndex = stages.indexOf(selectedStage);
+      const newProgress = Math.round((stageIndex / (stages.length - 1)) * 100);
+      await onBulkUpdate(selectedPRs, newProgress, selectedStage);
+    }
+  };
+
+  const handlePRSelection = (prUrl: string) => {
+    setSelectedPRs(prev => {
+      if (prev.includes(prUrl)) {
+        return prev.filter(url => url !== prUrl);
+      } else {
+        return [...prev, prUrl];
+      }
+    });
   };
 
   return (
@@ -65,19 +84,20 @@ const AdminControls: React.FC<AdminControlsProps> = ({
 
       <div className="space-y-3">
         <div>
-          <label className="block text-sm text-gray-400 mb-1">Select PR URL</label>
-          <select
-            value={selectedPrUrl}
-            onChange={(e) => setSelectedPrUrl(e.target.value)}
-            className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 text-sm"
-          >
-            <option value="">Select a PR</option>
+          <label className="block text-sm text-gray-400 mb-1">Select PRs to Update</label>
+          <div className="max-h-40 overflow-y-auto space-y-2">
             {stagePRs.map((pr) => (
-              <option key={pr.pr_url} value={pr.pr_url}>
-                {pr.pr_url}
-              </option>
+              <div key={pr.pr_url} className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={selectedPRs.includes(pr.pr_url)}
+                  onChange={() => handlePRSelection(pr.pr_url)}
+                  className="rounded border-gray-600 bg-gray-700 text-blue-500 focus:ring-blue-500"
+                />
+                <label className="text-sm text-gray-300">{pr.pr_url}</label>
+              </div>
             ))}
-          </select>
+          </div>
         </div>
 
         <div>
