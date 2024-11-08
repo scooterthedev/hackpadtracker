@@ -1,16 +1,16 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Lock } from 'lucide-react';
-import savePRProgress from '../api/prProgress';
+import { getPRsByStage } from '../api';
 
 interface AdminControlsProps {
   progress: number;
   currentStage: string;
   stages: string[];
-  onProgressChange: (progress: number) => void;
-  onProgressChangeComplete: (progress: number) => void;
-  onStageChange: (stage: string) => void;
+  onProgressChange: (newProgress: number) => void;
+  onProgressChangeComplete: (newProgress: number) => Promise<void>;
+  onStageChange: (selectedStage: string) => void;
   prUrls: string[];
-  onBulkUpdate: (selectedPrs: string[], newProgress: number, newStage: string) => void;
+  onBulkUpdate: (selectedPrs: string[], newProgress: number, newStage: string) => Promise<void>;
 }
 
 const AdminControls: React.FC<AdminControlsProps> = ({
@@ -20,14 +20,25 @@ const AdminControls: React.FC<AdminControlsProps> = ({
   onProgressChange,
   onProgressChangeComplete,
   onStageChange,
-  prUrls,
 }) => {
   const [localProgress, setLocalProgress] = useState(progress);
   const [selectedPrUrl, setSelectedPrUrl] = useState<string>('');
+  const [stagePRs, setStagePRs] = useState<Array<{ pr_url: string }>>([]);
 
   useEffect(() => {
     setLocalProgress(progress);
   }, [progress]);
+
+  useEffect(() => {
+    const fetchPRsForStage = async () => {
+      const prs = await getPRsByStage(currentStage);
+      setStagePRs(prs);
+    };
+
+    if (currentStage) {
+      fetchPRsForStage();
+    }
+  }, [currentStage]);
 
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(e.target.value);
@@ -35,16 +46,14 @@ const AdminControls: React.FC<AdminControlsProps> = ({
     onProgressChange(value);
   };
 
-  const handleProgressComplete = async () => {
+  const handleProgressComplete = () => {
     onProgressChangeComplete(localProgress);
-    if (selectedPrUrl) {
-      await savePRProgress(selectedPrUrl, localProgress, currentStage);
-    }
   };
 
   const handleStageSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedStage = e.target.value;
     onStageChange(selectedStage);
+    setSelectedPrUrl(''); // Reset selected PR when stage changes
   };
 
   return (
@@ -63,9 +72,9 @@ const AdminControls: React.FC<AdminControlsProps> = ({
             className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 text-sm"
           >
             <option value="">Select a PR</option>
-            {prUrls.map((url) => (
-              <option key={url} value={url}>
-                {url}
+            {stagePRs.map((pr) => (
+              <option key={pr.pr_url} value={pr.pr_url}>
+                {pr.pr_url}
               </option>
             ))}
           </select>
@@ -81,7 +90,6 @@ const AdminControls: React.FC<AdminControlsProps> = ({
             onChange={handleProgressChange}
             onMouseUp={handleProgressComplete}
             onTouchEnd={handleProgressComplete}
-            onMouseLeave={handleProgressComplete}
             className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
           />
           <div className="text-right text-sm text-gray-400 mt-1">{localProgress}%</div>

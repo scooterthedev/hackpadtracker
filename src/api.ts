@@ -29,4 +29,17 @@ export const getPRProgress = async (prUrl: string) => {
     return null;
   }
   return data;
+};
+
+export const getPRsByStage = async (stage: string) => {
+  const { data, error } = await supabase
+    .from('pr_progress')
+    .select('*')
+    .eq('current_stage', stage);
+
+  if (error) {
+    console.error('Error fetching PRs by stage:', error);
+    return [];
+  }
+  return data;
 }; 

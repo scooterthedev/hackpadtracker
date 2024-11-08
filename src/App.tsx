@@ -216,8 +216,10 @@ useEffect(() => {
   };
 
   const handleBulkUpdate = async (selectedPrs: string[], newProgress: number, newStage: string) => {
-    await savePRProgress(selectedPrs, newProgress, newStage);
-    // Optionally, refresh the state or handle UI updates
+    // Process each PR URL individually
+    await Promise.all(selectedPrs.map(pr => 
+      savePRProgress(pr, newProgress, newStage)
+    ));
   };
 
   return (
