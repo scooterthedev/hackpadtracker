@@ -42,4 +42,16 @@ export const getPRsByStage = async (stage: string) => {
     return [];
   }
   return data;
+};
+
+export const getAllPRs = async () => {
+  const { data, error } = await supabase
+    .from('pr_progress')
+    .select('*');
+
+  if (error) {
+    console.error('Error fetching all PRs:', error);
+    return [];
+  }
+  return data;
 }; 

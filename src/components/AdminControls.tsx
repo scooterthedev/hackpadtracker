@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Lock, ChevronDown } from 'lucide-react';
-import { getPRsByStage } from '../api';
+import { getAllPRs } from '../api.ts';
 
 interface AdminControlsProps {
   progress: number;
@@ -35,15 +35,13 @@ const AdminControls: React.FC<AdminControlsProps> = ({
   }, [progress]);
 
   useEffect(() => {
-    const fetchPRsForStage = async () => {
-      const prs = await getPRsByStage(currentStage);
+    const fetchPRs = async () => {
+      const prs = await getAllPRs();
       setStagePRs(prs);
     };
 
-    if (currentStage) {
-      fetchPRsForStage();
-    }
-  }, [currentStage]);
+    fetchPRs();
+  }, []);
 
   const formatPRNumber = (url: string) => {
     const prNumber = url.split('/').pop();
