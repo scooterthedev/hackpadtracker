@@ -311,7 +311,22 @@ useEffect(() => {
                       </div>
                       <ProgressBar progress={progress} currentStage={currentStage} />
                     </div>
-
+                    {!isAdmin && (
+                      <div className="mt-8 space-y-4">
+                        <div className="flex items-center space-x-2 text-blue-400">
+                          <h3 className="text-sm font-medium">Hackpad 3D Printing Live Stream</h3>
+                        </div>
+                        <div className="relative pt-[56.25%] rounded-lg overflow-hidden">
+                          <iframe
+                            src="https://www.youtube.com/embed/rmewn5hzLqs"
+                            title="Hackpad 3D Printing Live Stream"
+                            className="absolute top-0 left-0 w-full h-full border-0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          ></iframe>
+                        </div>
+                      </div>
+                    )}
                     {isAdmin && (
                       <AdminControls
                         progress={progress}

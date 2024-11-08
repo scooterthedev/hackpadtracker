@@ -37,14 +37,13 @@ const AdminControls: React.FC<AdminControlsProps> = ({
   useEffect(() => {
     const fetchPRsForStage = async () => {
       const prs = await getPRsByStage(currentStage);
-      const filteredPRs = prs.filter(pr => !prUrls.includes(pr.pr_url));
-      setStagePRs(filteredPRs);
+      setStagePRs(prs);
     };
 
     if (currentStage) {
       fetchPRsForStage();
     }
-  }, [currentStage, prUrls]);
+  }, [currentStage]);
 
   const formatPRNumber = (url: string) => {
     const prNumber = url.split('/').pop();
