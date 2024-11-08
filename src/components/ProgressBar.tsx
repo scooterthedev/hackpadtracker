@@ -30,7 +30,7 @@ const ProgressBar: React.FC<ProgressBarProps> = memo(({ progress, currentStage }
           ))}
         </div>
       </div>
-      <StatusQueue stage={currentStage} />
+      <StatusQueue current_stage={currentStage} />
     </div>
   );
 });
