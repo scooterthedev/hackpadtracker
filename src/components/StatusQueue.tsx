@@ -10,6 +10,12 @@ const StatusQueue: React.FC<StatusQueueProps> = ({ stage }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchQueueCount = useCallback(async () => {
+    if (!stage) {
+      setCount(null);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
       const { error, count: queueCount } = await supabase
@@ -33,23 +39,27 @@ const StatusQueue: React.FC<StatusQueueProps> = ({ stage }) => {
   useEffect(() => {
     fetchQueueCount();
 
-    const subscription = supabase
-      .channel('pr_progress_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'pr_progress'
-        },
-        fetchQueueCount
-      )
-      .subscribe();
+    if (stage) {
+      const subscription = supabase
+        .channel('pr_progress_changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'pr_progress'
+          },
+          fetchQueueCount
+        )
+        .subscribe();
 
-    return () => {
-      subscription.unsubscribe();
-    };
+      return () => {
+        subscription.unsubscribe();
+      };
+    }
   }, [stage, fetchQueueCount]);
+
+  if (!stage) return null;
 
   if (isLoading) {
     return (
