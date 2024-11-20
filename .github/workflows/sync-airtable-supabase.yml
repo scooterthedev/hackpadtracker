@@ -1,0 +1,31 @@
+name: Sync Airtable to Supabase
+
+on:
+  schedule:
+    - cron: '*/5 * * * *' # Runs every 5 minutes
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set Up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18' # Specify your Node.js version
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run Sync Script
+        env:
+          AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
+          AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
+          AIRTABLE_TABLE_NAME: ${{ secrets.AIRTABLE_TABLE_NAME }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: npm run sync:airtable
