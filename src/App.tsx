@@ -339,7 +339,7 @@ useEffect(() => {
                         </div>
                         <div className="relative pt-[56.25%] rounded-lg overflow-hidden">
                           <iframe
-                            src="https://www.youtube.com/embed/rmewn5hzLqs"
+                            src="https://www.youtube.com/live/aTe_x3MWhbw"
                             title="Hackpad 3D Printing Live Stream"
                             className="absolute top-0 left-0 w-full h-full border-0"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
