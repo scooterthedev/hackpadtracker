@@ -1,5 +1,7 @@
 import React, { memo } from 'react';
 import StatusQueue from './StatusQueue';
+import Tippy from '@tippyjs/react';
+import 'tippy.js/dist/tippy.css';
 
 interface ProgressBarProps {
   progress: number;
@@ -18,19 +20,19 @@ const ProgressBar: React.FC<ProgressBarProps> = memo(({ progress, currentStage, 
       <div className="relative pt-1">
         <div className="flex gap-1.5">
           {stages.map((stage, index) => (
-            <div
-              key={index}
-              className={`
-                h-4 flex-1 rounded-sm
-                ${index < completedSegments 
-                  ? 'bg-gradient-to-r from-blue-400 to-blue-500 shadow-lg shadow-blue-500/30' 
-                  : 'bg-gray-700/50 border border-gray-700'
-                }
-                ${index === completedSegments - 1 ? 'animate-pulse' : ''}
-                transition-all duration-300 ease-in-out
-              `}
-              title={stage}
-            />
+            <Tippy content={stage} key={index}>
+              <div
+                className={`
+                  h-4 flex-1 rounded-sm
+                  ${index < completedSegments 
+                    ? 'bg-gradient-to-r from-blue-400 to-blue-500 shadow-lg shadow-blue-500/30' 
+                    : 'bg-gray-700/50 border border-gray-700'
+                  }
+                  ${index === completedSegments - 1 ? 'animate-pulse' : ''}
+                  transition-all duration-300 ease-in-out
+                `}
+              />
+            </Tippy>
           ))}
         </div>
       </div>
