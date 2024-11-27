@@ -198,6 +198,8 @@ function App() {
       initialProgress = 54;
     }
 
+    await savePRProgress(prUrl, initialProgress, initialStage);
+
     setProgress(initialProgress);
     setCurrentStage(initialStage);
     savePRProgressLocally(prUrl, initialProgress, initialStage);
