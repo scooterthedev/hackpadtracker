@@ -58,6 +58,7 @@ function App() {
             setAcrylicCut(savedProgress.acrylic_cut);
             setSoldered(savedProgress.soldered);
             if (!savedProgress.email) {
+              console.log('Email is missing, showing email prompt.');
               setShowEmailPrompt(true);
             }
             // Save to local storage for future use
@@ -268,6 +269,7 @@ function App() {
   };
 
   const handleEmailSubmit = async (email: string) => {
+    console.log('Submitting email:', email);
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     
     if (!emailRegex.test(email)) {
@@ -435,6 +437,7 @@ function App() {
           </Modal>
 
           <Modal isOpen={showEmailPrompt} onClose={() => setShowEmailPrompt(false)}>
+            {console.log('Rendering email prompt modal')}
             <div>
               <h2 className="text-xl font-semibold text-white mb-4">Enter your email for Hackpad Updates</h2>
               <input
