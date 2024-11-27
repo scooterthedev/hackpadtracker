@@ -192,6 +192,12 @@ function App() {
       await savePRProgress(prUrl, initialProgress, initialStage);
     }
 
+    if (initialStage === 'Printing your 3d Case!') {
+      initialProgress = 36;
+    } else if (initialStage === "Ordering PCB's") {
+      initialProgress = 54;
+    }
+
     setProgress(initialProgress);
     setCurrentStage(initialStage);
     savePRProgressLocally(prUrl, initialProgress, initialStage);
