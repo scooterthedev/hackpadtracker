@@ -1,10 +1,10 @@
 import { supabase } from './utils/supabaseClient';
 
-export const savePRProgress = async (prUrl: string, progress: number, currentStage: string) => {
+export const savePRProgress = async (prUrl: string, progress: number, currentStage: string, acrylicCut: boolean, soldered: boolean) => {
   const { data, error } = await supabase
     .from('pr_progress')
     .upsert(
-      { pr_url: prUrl, progress, current_stage: currentStage },
+      { pr_url: prUrl, progress, current_stage: currentStage, acrylic_cut: acrylicCut, soldered: soldered },
       { 
         onConflict: 'pr_url',
         ignoreDuplicates: false

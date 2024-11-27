@@ -5,6 +5,8 @@ import { getAllPRs } from '../api.ts';
 interface AdminControlsProps {
   progress: number;
   currentStage: string;
+  acrylicCut: boolean;
+  soldered: boolean;
   stages: string[];
   onProgressChange: (newProgress: number) => void;
   onProgressChangeComplete: (newProgress: number) => Promise<void>;
@@ -17,6 +19,8 @@ interface AdminControlsProps {
 const AdminControls: React.FC<AdminControlsProps> = ({
   progress,
   currentStage,
+  acrylicCut,
+  soldered,
   stages,
   onProgressChange,
   onProgressChangeComplete,
@@ -29,10 +33,14 @@ const AdminControls: React.FC<AdminControlsProps> = ({
   const [selectedPRs, setSelectedPRs] = useState<string[]>([]);
   const [stagePRs, setStagePRs] = useState<Array<{ pr_url: string }>>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [localAcrylicCut, setLocalAcrylicCut] = useState(acrylicCut);
+  const [localSoldered, setLocalSoldered] = useState(soldered);
 
   useEffect(() => {
     setLocalProgress(progress);
-  }, [progress]);
+    setLocalAcrylicCut(acrylicCut);
+    setLocalSoldered(soldered);
+  }, [progress, acrylicCut, soldered]);
 
   useEffect(() => {
     const fetchPRs = async () => {
@@ -92,6 +100,20 @@ const AdminControls: React.FC<AdminControlsProps> = ({
         return [...prev, prUrl];
       }
     });
+  };
+
+  const handleAcrylicCutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.checked;
+    setLocalAcrylicCut(value);
+    // Update local storage and sync with DB
+    // Implement similar to progress handling
+  };
+
+  const handleSolderedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.checked;
+    setLocalSoldered(value);
+    // Update local storage and sync with DB
+    // Implement similar to progress handling
   };
 
   return (
@@ -167,6 +189,26 @@ const AdminControls: React.FC<AdminControlsProps> = ({
             className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
           />
           <div className="text-right text-sm text-gray-400 mt-1">{localProgress}%</div>
+        </div>
+
+        <div>
+          <label className="block text-sm text-gray-400 mb-1">Acrylic Cut?</label>
+          <input
+            type="checkbox"
+            checked={localAcrylicCut}
+            onChange={handleAcrylicCutChange}
+            className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm text-gray-400 mb-1">Soldered?</label>
+          <input
+            type="checkbox"
+            checked={localSoldered}
+            onChange={handleSolderedChange}
+            className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+          />
         </div>
 
         <div>

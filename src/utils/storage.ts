@@ -2,16 +2,20 @@ interface PRProgress {
   prUrl: string;
   progress: number;
   currentStage: string;
+  acrylicCut: boolean;
+  soldered: boolean;
 }
 
 const STORAGE_KEY = 'pr-progress-data';
 
-export const savePRProgressLocally = (prUrl: string, progress: number, currentStage: string): void => {
+export const savePRProgressLocally = (prUrl: string, progress: number, currentStage: string, acrylicCut: boolean, soldered: boolean): void => {
   const data = getPRProgressData();
   data[prUrl] = {
     prUrl,
     progress,
-    currentStage
+    currentStage,
+    acrylicCut,
+    soldered
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 };

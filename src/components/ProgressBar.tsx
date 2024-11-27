@@ -4,17 +4,20 @@ import StatusQueue from './StatusQueue';
 interface ProgressBarProps {
   progress: number;
   currentStage: string;
+  acrylicCut: boolean;
+  soldered: boolean;
+  stages: string[];
 }
 
-const ProgressBar: React.FC<ProgressBarProps> = memo(({ progress, currentStage }) => {
-  const totalSegments = 10;
+const ProgressBar: React.FC<ProgressBarProps> = memo(({ progress, currentStage, acrylicCut, soldered, stages }) => {
+  const totalSegments = stages.length;
   const completedSegments = Math.floor((progress / 100) * totalSegments);
 
   return (
     <div className="space-y-2">
       <div className="relative pt-1">
         <div className="flex gap-1.5">
-          {Array.from({ length: totalSegments }).map((_, index) => (
+          {stages.map((stage, index) => (
             <div
               key={index}
               className={`
@@ -26,11 +29,26 @@ const ProgressBar: React.FC<ProgressBarProps> = memo(({ progress, currentStage }
                 ${index === completedSegments - 1 ? 'animate-pulse' : ''}
                 transition-all duration-300 ease-in-out
               `}
+              title={stage}
             />
           ))}
         </div>
       </div>
       <StatusQueue current_stage={currentStage} />
+      <div className="flex space-x-4 mt-4">
+        <div className="flex items-center space-x-2">
+          <span className="text-sm text-gray-400">Acrylic Cut:</span>
+          <span className={`text-sm ${acrylicCut ? 'text-green-400' : 'text-red-400'}`}>
+            {acrylicCut ? 'Yes' : 'No'}
+          </span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className="text-sm text-gray-400">Soldered:</span>
+          <span className={`text-sm ${soldered ? 'text-green-400' : 'text-red-400'}`}>
+            {soldered ? 'Yes' : 'No'}
+          </span>
+        </div>
+      </div>
     </div>
   );
 });
