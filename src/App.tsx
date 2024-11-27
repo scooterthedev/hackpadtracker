@@ -27,9 +27,8 @@ function App() {
   const stages = [
     'PR Approved',
     '3D Printing',
-    'Acrylic Cut',
-    'Soldering',
     'Ordering PCBs',
+    'Soldering',
     'Out for Shipping',
     'Shipped :D ',
   ];

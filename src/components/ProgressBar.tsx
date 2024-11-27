@@ -37,20 +37,6 @@ const ProgressBar: React.FC<ProgressBarProps> = memo(({ progress, currentStage, 
         </div>
       </div>
       <StatusQueue current_stage={currentStage} />
-      <div className="flex space-x-4 mt-4">
-        <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-400">Acrylic Cut:</span>
-          <span className={`text-sm ${acrylicCut ? 'text-green-400' : 'text-red-400'}`}>
-            {acrylicCut ? 'Yes' : 'No'}
-          </span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-400">Soldered:</span>
-          <span className={`text-sm ${soldered ? 'text-green-400' : 'text-red-400'}`}>
-            {soldered ? 'Yes' : 'No'}
-          </span>
-        </div>
-      </div>
     </div>
   );
 });
