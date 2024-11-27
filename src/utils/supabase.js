@@ -1,29 +1,11 @@
-const { createClient } = require('@supabase/supabase-js');
+export default async function handler(req, res) {
+    if (req.method === 'POST') {
+        const data = req.body; // This is the data sent by Zapier
+        console.log('Received data:', data);
 
-const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-const SUPABASE_KEY = 'YOUR_SUPABASE_API_KEY';
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
-const updateSupabase = async (records) => {
-    for (const record of records) {
-        const { id, fields } = record;
-
-        const { error } = await supabase
-            .from('YOUR_TABLE_NAME') // Replace with your Supabase table
-            .upsert({
-                id,  // Match Airtable record ID with Supabase row ID
-                ...fields,
-            });
-
-        if (error) {
-            console.error('Error updating Supabase:', error);
-        } else {
-            console.log('Updated record:', id);
-        }
+        res.status(200).json({ success: true });
+    } else {
+        res.setHeader('Allow', ['POST']);
+        res.status(405).end(`Method ${req.method} Not Allowed`);
     }
-};
-
-fetchAirtableData().then((records) => {
-    updateSupabase(records);
-});
+}
