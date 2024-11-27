@@ -2,14 +2,24 @@ import { supabase } from './utils/supabaseClient';
 import { checkPRStatus } from './utils/validation';
 
 export const savePRProgress = async (prUrl: string, progress: number, currentStage: string, acrylicCut: boolean, soldered: boolean) => {
+  const { data: currentData, error: fetchError } = await supabase
+    .from('pr_progress')
+    .select('current_stage')
+    .eq('pr_url', prUrl)
+    .single();
+
+  if (fetchError) {
+    console.error('Error fetching current stage:', fetchError);
+    return;
+  }
+
+  const oldCurrentStage = currentData?.current_stage || null;
+
   const { data, error } = await supabase
     .from('pr_progress')
     .upsert(
-      { pr_url: prUrl, progress, current_stage: currentStage, acrylic_cut: acrylicCut, soldered: soldered },
-      { 
-        onConflict: 'pr_url',
-        ignoreDuplicates: false
-      }
+      { pr_url: prUrl, progress, current_stage: currentStage, old_current_stage: oldCurrentStage, acrylic_cut: acrylicCut, soldered: soldered },
+      { onConflict: 'pr_url' }
     );
 
   if (error) {
@@ -78,4 +88,16 @@ export const cleanupInvalidPRs = async () => {
         .eq('pr_url', pr.pr_url);
     }
   }
+};
+
+export const saveEmailToDatabase = async (prUrl: string, email: string) => {
+  const { data, error } = await supabase
+    .from('pr_progress')
+    .update({ email })
+    .eq('pr_url', prUrl);
+
+  if (error) {
+    console.error('Error saving email:', error);
+  }
+  return data;
 }; 

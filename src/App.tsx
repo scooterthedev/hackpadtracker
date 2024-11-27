@@ -5,7 +5,7 @@ import ProgressBar from './components/ProgressBar';
 import AdminControls from './components/AdminControls';
 import LoginModal from './components/LoginModal';
 import { isValidGitHubPRUrl } from './utils/validation';
-import { savePRProgress, getPRProgress } from './api';
+import { savePRProgress, getPRProgress, saveEmailToDatabase } from './api';
 import Cookies from 'js-cookie';
 import { savePRProgressLocally } from './utils/storage';
 import { checkPRStatus } from './utils/validation';
@@ -21,6 +21,8 @@ function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [email, setEmail] = useState('');
+  const [showEmailPrompt, setShowEmailPrompt] = useState(false);
   const client_secrets = import.meta.env.VITE_CODE;
   const [prUrls] = useState<string[]>([]);
 
@@ -54,6 +56,9 @@ function App() {
             setCurrentStage(savedProgress.current_stage);
             setAcrylicCut(savedProgress.acrylic_cut);
             setSoldered(savedProgress.soldered);
+            if (!savedProgress.email) {
+              setShowEmailPrompt(true);
+            }
             // Save to local storage for future use
             savePRProgressLocally(prUrl, savedProgress.progress, savedProgress.current_stage, savedProgress.acrylic_cut, savedProgress.soldered);
           }
@@ -261,6 +266,19 @@ function App() {
     ));
   };
 
+  const handleEmailSubmit = async (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+    if (!emailRegex.test(email)) {
+      alert('Please enter a valid email address.');
+      return;
+    }
+
+    await saveEmailToDatabase(prUrl, email);
+    setEmail(email);
+    setShowEmailPrompt(false);
+  };
+
   return (
     <Routes>
       <Route path="/callback" element={<div>Handling OAuth callback...</div>} />
@@ -413,6 +431,25 @@ function App() {
               }}
               error={loginError}
             />
+          )}
+
+          {showEmailPrompt && (
+            <div className="bg-gray-800/50 backdrop-blur-lg rounded-xl p-6 shadow-xl border border-gray-700 mt-6">
+              <h2 className="text-xl font-semibold text-white mb-4">Enter your email for Hackpad Updates</h2>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                className="w-full py-2 px-3 border border-gray-600 rounded-md bg-gray-700 text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm mb-4"
+              />
+              <button
+                onClick={() => handleEmailSubmit(email)}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+              >
+                Submit
+              </button>
+            </div>
           )}
         </div>
       } />
