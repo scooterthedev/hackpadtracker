@@ -8,6 +8,7 @@ import { isValidGitHubPRUrl } from './utils/validation';
 import { savePRProgress, getPRProgress } from './api';
 import Cookies from 'js-cookie';
 import { savePRProgressLocally } from './utils/storage';
+import { checkPRStatus } from './utils/validation';
 
 function App() {
   const [prUrl, setPrUrl] = useState('');
@@ -126,7 +127,7 @@ function App() {
               'Content-Type': 'application/x-www-form-urlencoded',
             },
             body: new URLSearchParams({
-              client_id: '2210535565.7957522136834',
+              client_id: import.meta.env.VITE_CLIENT_ID,
               client_secret: import.meta.env.VITE_CODE,
               code,
               redirect_uri: import.meta.env.VITE_URL + '/callback',
@@ -160,25 +161,41 @@ function App() {
       return;
     }
 
+    const prNumber = prUrl.split('/').pop() || '';
+    const { isValid: isPRValid, isMerged } = await checkPRStatus(prNumber);
+
+    if (!isPRValid) {
+      setIsValid(false);
+      return;
+    }
+
     setIsValid(true);
     setIsSubmitted(true);
 
     const savedProgress = await getPRProgress(prUrl);
+    let initialProgress = 0;
+    let initialStage = stages[0];
+
     if (savedProgress) {
-      setProgress(savedProgress.progress);
-      setCurrentStage(savedProgress.current_stage);
-      setAcrylicCut(savedProgress.acrylic_cut);
-      setSoldered(savedProgress.soldered);
-      // Save to local storage after initial fetch
-      savePRProgressLocally(prUrl, savedProgress.progress, savedProgress.current_stage, savedProgress.acrylic_cut, savedProgress.soldered);
+      if (isMerged && savedProgress.progress < 20) {
+        initialProgress = 20;
+        initialStage = stages[Math.floor((20 / 100) * (stages.length - 1))];
+        await savePRProgress(prUrl, initialProgress, initialStage);
+      } else {
+        initialProgress = savedProgress.progress;
+        initialStage = savedProgress.current_stage;
+      }
     } else {
-      setProgress(0);
-      setCurrentStage(stages[0]);
-      setAcrylicCut(false);
-      setSoldered(false);
-      savePRProgressLocally(prUrl, 0, stages[0], false, false);
-      await savePRProgress(prUrl, 0, stages[0], false, false);
+      if (isMerged) {
+        initialProgress = 20;
+        initialStage = stages[Math.floor((20 / 100) * (stages.length - 1))];
+      }
+      await savePRProgress(prUrl, initialProgress, initialStage);
     }
+
+    setProgress(initialProgress);
+    setCurrentStage(initialStage);
+    savePRProgressLocally(prUrl, initialProgress, initialStage);
   };
 
   const handleLogout = () => {
@@ -339,7 +356,7 @@ function App() {
                         </div>
                         <div className="relative pt-[56.25%] rounded-lg overflow-hidden">
                           <iframe
-                            src="https://www.youtube.com/embed/rmewn5hzLqs"
+                            src="https://www.youtube.com/embed/ZtxAc-QAwJw"
                             title="Hackpad 3D Printing Live Stream"
                             className="absolute top-0 left-0 w-full h-full border-0"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

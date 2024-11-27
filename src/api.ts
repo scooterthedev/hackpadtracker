@@ -1,4 +1,5 @@
 import { supabase } from './utils/supabaseClient';
+import { checkPRStatus } from './utils/validation';
 
 export const savePRProgress = async (prUrl: string, progress: number, currentStage: string, acrylicCut: boolean, soldered: boolean) => {
   const { data, error } = await supabase
@@ -54,4 +55,27 @@ export const getAllPRs = async () => {
     return [];
   }
   return data;
+};
+
+export const cleanupInvalidPRs = async () => {
+  const { data: allPRs, error } = await supabase
+    .from('pr_progress')
+    .select('pr_url');
+
+  if (error || !allPRs) {
+    console.error('Error fetching PRs for cleanup:', error);
+    return;
+  }
+
+  for (const pr of allPRs) {
+    const prNumber = pr.pr_url.split('/').pop();
+    const { isValid } = await checkPRStatus(prNumber);
+
+    if (!isValid) {
+      await supabase
+        .from('pr_progress')
+        .delete()
+        .eq('pr_url', pr.pr_url);
+    }
+  }
 }; 
