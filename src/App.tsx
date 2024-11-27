@@ -210,6 +210,11 @@ function App() {
     setProgress(initialProgress);
     setCurrentStage(initialStage);
     savePRProgressLocally(prUrl, initialProgress, initialStage);
+
+    // Check if email is missing and show prompt
+    if (!savedProgress?.email) {
+      setShowEmailPrompt(true);
+    }
   };
 
   const handleLogout = () => {
