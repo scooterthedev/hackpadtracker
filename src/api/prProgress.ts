@@ -21,7 +21,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     case 'POST': {
       const { progress, currentStage, prUrls } = req.body;
-      const updates = prUrls.map(prUrl => ({
+
+      if (!prUrls) {
+        const { data: allPRs, error: fetchError } = await supabase
+          .from('pr_progress')
+          .select('pr_url, current_stage');
+
+        if (fetchError) {
+          return res.status(500).json({ error: fetchError.message });
+        }
+
+        const updates = allPRs.map(pr => ({
+          pr_url: pr.pr_url,
+          progress: 49,
+          current_stage: pr.current_stage
+        }));
+
+        const { data: upsertData, error: upsertError } = await supabase
+          .from('pr_progress')
+          .upsert(updates);
+
+        if (upsertError) {
+          return res.status(500).json({ error: upsertError.message });
+        }
+        return res.status(200).json(upsertData);
+      }
+
+      const updates = prUrls.map((prUrl: string) => ({
         pr_url: prUrl,
         progress,
         current_stage: currentStage
