@@ -20,16 +20,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     case 'POST': {
-      const { progress, currentStage, prUrls } = req.body;
+      const { progress, currentStage, prUrls, acrylicCut, soldered } = req.body;
       const updates = prUrls.map(prUrl => ({
         pr_url: prUrl,
         progress,
-        current_stage: currentStage
+        current_stage: currentStage,
+        acrylic_cut: acrylicCut,
+        soldered: soldered,
       }));
 
       const { data: upsertData, error: upsertError } = await supabase
         .from('pr_progress')
-        .upsert(updates);
+        .upsert(updates, { onConflict: 'pr_url' });
 
       if (upsertError) {
         return res.status(500).json({ error: upsertError.message });

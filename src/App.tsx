@@ -16,6 +16,8 @@ function App() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentStage, setCurrentStage] = useState('');
+  const [acrylicCut, setAcrylicCut] = useState(false);
+  const [soldered, setSoldered] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginError, setLoginError] = useState('');
@@ -24,37 +26,42 @@ function App() {
 
   const stages = [
     'PR Approved',
+    '3D Printing',
     'Ordering PCBs',
-    'Printing your 3d Case!',
+    'Soldering',
     'Out for Shipping',
     'Shipped :D ',
   ];
 
   const navigate = useNavigate();
 
-// Load saved progress when PR URL is submitted
-useEffect(() => {
-  const loadProgress = async () => {
-    if (isSubmitted && prUrl) {
-      // First check local storage
-      const localProgress = getPRProgress(prUrl);
-      if (localProgress) {
-        setProgress(localProgress.progress);
-        setCurrentStage(localProgress.currentStage);
-      } else {
-        // If not in local storage, fetch from DB
-        const savedProgress = await getPRProgress(prUrl);
-        if (savedProgress) {
-          setProgress(savedProgress.progress);
-          setCurrentStage(savedProgress.current_stage);
-          // Save to local storage for future use
-          savePRProgressLocally(prUrl, savedProgress.progress, savedProgress.current_stage);
+  // Load saved progress when PR URL is submitted
+  useEffect(() => {
+    const loadProgress = async () => {
+      if (isSubmitted && prUrl) {
+        // First check local storage
+        const localProgress = getPRProgress(prUrl);
+        if (localProgress) {
+          setProgress(localProgress.progress);
+          setCurrentStage(localProgress.currentStage);
+          setAcrylicCut(localProgress.acrylicCut);
+          setSoldered(localProgress.soldered);
+        } else {
+          // If not in local storage, fetch from DB
+          const savedProgress = await getPRProgress(prUrl);
+          if (savedProgress) {
+            setProgress(savedProgress.progress);
+            setCurrentStage(savedProgress.current_stage);
+            setAcrylicCut(savedProgress.acrylic_cut);
+            setSoldered(savedProgress.soldered);
+            // Save to local storage for future use
+            savePRProgressLocally(prUrl, savedProgress.progress, savedProgress.current_stage, savedProgress.acrylic_cut, savedProgress.soldered);
+          }
         }
       }
-    }
-  };
-  loadProgress();
-}, [isSubmitted, prUrl]);
+    };
+    loadProgress();
+  }, [isSubmitted, prUrl]);
 
   const verifyUser = useCallback(async (token: string, userId: string) => {
     const authorizedUsers = [import.meta.env.VITE_AUTHUSERS1, import.meta.env.VITE_AUTHUSERS2, import.meta.env.VITE_AUTHUSERS3];
@@ -193,6 +200,7 @@ useEffect(() => {
   const handleLogout = () => {
     setIsAdmin(false);
     Cookies.remove('slack_token');
+    Cookies.remove('slack_user_id');
   };
 
   const handleProgressChange = (newProgress: number) => {
@@ -201,21 +209,23 @@ useEffect(() => {
     setCurrentStage(newStage);
     
     // Always update local storage immediately
-    savePRProgressLocally(prUrl, newProgress, newStage);
+    savePRProgressLocally(prUrl, newProgress, newStage, acrylicCut, soldered);
   };
 
   const handleProgressComplete = async (newProgress: number) => {
     if (prUrl) {
       // Sync with DB
-      await savePRProgress(prUrl, newProgress, currentStage);
+      await savePRProgress(prUrl, newProgress, currentStage, acrylicCut, soldered);
       
       // Fetch latest from DB to ensure consistency
       const latestProgress = await getPRProgress(prUrl);
       if (latestProgress) {
         setProgress(latestProgress.progress);
         setCurrentStage(latestProgress.current_stage);
+        setAcrylicCut(latestProgress.acrylic_cut);
+        setSoldered(latestProgress.soldered);
         // Update local storage with latest DB data
-        savePRProgressLocally(prUrl, latestProgress.progress, latestProgress.current_stage);
+        savePRProgressLocally(prUrl, latestProgress.progress, latestProgress.current_stage, latestProgress.acrylic_cut, latestProgress.soldered);
       }
     }
   };
@@ -228,18 +238,18 @@ useEffect(() => {
     setCurrentStage(selectedStage);
     
     // Update local storage
-    savePRProgressLocally(prUrl, newProgress, selectedStage);
+    savePRProgressLocally(prUrl, newProgress, selectedStage, acrylicCut, soldered);
     
     // Sync with DB
     if (prUrl) {
-      savePRProgress(prUrl, newProgress, selectedStage);
+      savePRProgress(prUrl, newProgress, selectedStage, acrylicCut, soldered);
     }
   };
 
   const handleBulkUpdate = async (selectedPrs: string[], newProgress: number, newStage: string) => {
     // Process each PR URL individually
     await Promise.all(selectedPrs.map(pr => 
-      savePRProgress(pr, newProgress, newStage)
+      savePRProgress(pr, newProgress, newStage, acrylicCut, soldered)
     ));
   };
 
@@ -330,7 +340,13 @@ useEffect(() => {
                         <span className="text-sm font-medium text-blue-400">{currentStage}</span>
                         <span className="text-sm text-gray-400">{Math.round(progress)}%</span>
                       </div>
-                      <ProgressBar progress={progress} currentStage={currentStage} />
+                      <ProgressBar 
+                        progress={progress} 
+                        currentStage={currentStage} 
+                        acrylicCut={acrylicCut} 
+                        soldered={soldered} 
+                        stages={stages}
+                      />
                     </div>
                     {!isAdmin && (
                       <div className="mt-8 space-y-4">
@@ -352,6 +368,8 @@ useEffect(() => {
                       <AdminControls
                         progress={progress}
                         currentStage={currentStage}
+                        acrylicCut={acrylicCut}
+                        soldered={soldered}
                         currentPrUrl={prUrl}
                         stages={stages}
                         onProgressChange={handleProgressChange}
