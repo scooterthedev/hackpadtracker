@@ -9,6 +9,7 @@ import { savePRProgress, getPRProgress, saveEmailToDatabase } from './api';
 import Cookies from 'js-cookie';
 import { savePRProgressLocally } from './utils/storage';
 import { checkPRStatus } from './utils/validation';
+import Modal from './components/Modal';
 
 function App() {
   const [prUrl, setPrUrl] = useState('');
@@ -423,7 +424,7 @@ function App() {
             </div>
           </div>
 
-          {showLoginModal && (
+          <Modal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)}>
             <LoginModal
               onClose={() => {
                 setShowLoginModal(false);
@@ -431,10 +432,10 @@ function App() {
               }}
               error={loginError}
             />
-          )}
+          </Modal>
 
-          {showEmailPrompt && (
-            <div className="bg-gray-800/50 backdrop-blur-lg rounded-xl p-6 shadow-xl border border-gray-700 mt-6">
+          <Modal isOpen={showEmailPrompt} onClose={() => setShowEmailPrompt(false)}>
+            <div>
               <h2 className="text-xl font-semibold text-white mb-4">Enter your email for Hackpad Updates</h2>
               <input
                 type="email"
@@ -450,7 +451,7 @@ function App() {
                 Submit
               </button>
             </div>
-          )}
+          </Modal>
         </div>
       } />
     </Routes>
