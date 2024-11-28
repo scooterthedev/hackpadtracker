@@ -1,7 +1,7 @@
-const nodemailer = require('nodemailer');
-const { createClient } = require('@supabase/supabase-js');
+import nodemailer from 'nodemailer';
+import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
 async function sendEmail(to, prUrl, oldStage, newStage) {
   const transporter = nodemailer.createTransport({
@@ -9,13 +9,13 @@ async function sendEmail(to, prUrl, oldStage, newStage) {
     port: 465,
     secure: true,
     auth: {
-      user: import.meta.env.VITE_EMAIL_USER,
-      pass: import.meta.env.VITE_EMAIL_PASS,
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
     },
   });
 
   const mailOptions = {
-    from: import.meta.env.VITE_EMAIL_USER,
+    from: process.env.EMAIL_USER,
     to,
     subject: 'Hackpad Stage Update',
     text: `The Hackpad PR #${prUrl} has moved from ${oldStage} to ${newStage}! View live updates at https://hackpadtracker-eta.vercel.app!`,
