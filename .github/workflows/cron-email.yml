@@ -2,7 +2,7 @@ name: Send Email on Stage Change
 
 on:
   schedule:
-    - cron: '*/1 * * * *' # Runs every 1 minute
+    - cron: '* * * * *' # Runs every minute
 
 jobs:
   send_email:
