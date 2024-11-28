@@ -1,4 +1,4 @@
-import { fetchAirtableData, listenForAirtableChanges } from '../src/utils/airtableClient';
+import { fetchAirtableData, listenForAirtableChanges } from '../src/utils/airtableClient.js';
 import { supabase } from '../src/utils/supabaseClient';
 
 async function syncAirtableToSupabase() {
