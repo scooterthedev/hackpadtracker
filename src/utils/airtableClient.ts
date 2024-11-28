@@ -1,6 +1,6 @@
-const AIRTABLE_API_KEY = "YOUR_API_KEY";
-const BASE_ID = "YOUR_BASE_ID";
-const TABLE_NAME = "YOUR_TABLE_NAME";
+const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
+const BASE_ID = process.env.AIRTABLE_BASE_ID;
+const TABLE_NAME = process.env.AIRTABLE_TABLE_NAME;
 
 export async function fetchAirtableData() {
     const response = await fetch(`https://api.airtable.com/v0/${BASE_ID}/${TABLE_NAME}`, {
@@ -17,7 +17,7 @@ export async function listenForAirtableChanges(callback) {
     const headers = {
         Authorization: `Bearer ${AIRTABLE_API_KEY}`,
     };
-Admin Controls
+
     const fetchData = async () => {
         const response = await fetch(url, { headers });
         if (!response.ok) throw new Error("Failed to fetch data from Airtable");
