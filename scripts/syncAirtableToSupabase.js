@@ -1,5 +1,5 @@
-const { fetchAirtableData, listenForAirtableChanges } = require('../src/utils/airtableClient');
-const { supabase } = require('../src/utils/supabaseClient');
+import { fetchAirtableData, listenForAirtableChanges } from '../src/utils/airtableClient';
+import { supabase } from '../src/utils/supabaseClient';
 
 async function syncAirtableToSupabase() {
   try {
