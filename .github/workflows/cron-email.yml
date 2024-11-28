@@ -20,7 +20,7 @@ jobs:
         run: npm install
 
       - name: Run email script
-        run: node src\scripts\sendEmailOnStageChange.js
+        run: node src/scripts/sendEmailOnStageChange.js
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
