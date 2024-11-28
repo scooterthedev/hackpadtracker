@@ -20,5 +20,5 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "airtableClient.js"]
+  "include": ["src", "src/utils/airtableClient.js"]
 }

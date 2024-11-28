@@ -1,5 +1,5 @@
-import { fetchAirtableData, listenForAirtableChanges } from '../airtableClient.js';
-import { supabase } from '../src/utils/supabaseClient.js';
+import { fetchAirtableData, listenForAirtableChanges } from '../src/utils/airtableClient.js';
+import { supabase } from '../src/utils/supabaseClient.ts';
 
 async function syncAirtableToSupabase() {
   try {
