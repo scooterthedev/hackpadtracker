@@ -14,13 +14,13 @@ async function syncAirtableToSupabase() {
       let currentStage = '';
       let progress = 0;
 
-      if (partsPrinted) {
-        currentStage = 'Printing your 3D Case!';
-      } else if (pcbsOrdered) {
-        currentStage = 'Ordering PCBs';
-      } else if (soldered) {
+      if (soldered) {
         currentStage = 'Soldering';
         progress = 68;
+      } else if (pcbsOrdered) {
+        currentStage = 'Ordering PCBs';
+      } else if (partsPrinted) {
+        currentStage = 'Printing your 3D Case!';
       }
 
       const { data, error } = await supabase
