@@ -14,18 +14,22 @@ async function sendEmail(to, prUrl, oldStage, newStage) {
     },
   });
 
+  const prNumber = prUrl.split('/pull/').pop();
+
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to,
     subject: 'Hackpad Stage Update',
-    text: `The Hackpad PR #${prUrl} has moved from ${oldStage} to ${newStage}! View live updates at https://hackpadtracker-eta.vercel.app!`,
+    text: `The Hackpad PR #${prNumber} has moved from ${oldStage} to ${newStage}!`,
   };
 
   try {
     await transporter.sendMail(mailOptions);
     console.log('Email sent successfully');
+    return true;
   } catch (error) {
     console.error('Error sending email:', error);
+    return false;
   }
 }
 
@@ -42,7 +46,18 @@ async function checkForStageChanges() {
 
   for (const pr of data) {
     if (pr.old_current_stage !== pr.current_stage && pr.email) {
-      await sendEmail(pr.email, pr.pr_url, pr.old_current_stage, pr.current_stage);
+      const emailSent = await sendEmail(pr.email, pr.pr_url, pr.old_current_stage, pr.current_stage);
+      if (emailSent) {
+        const { error: updateError } = await supabase
+          .from('pr_progress')
+          .update({ old_current_stage: pr.current_stage })
+          .eq('pr_url', pr.pr_url);
+        if (updateError) {
+          console.error('Error updating stage:', updateError);
+        } else {
+          console.log(`Stage updated for PR ${pr.pr_url}`);
+        }
+      }
     }
   }
 }
