@@ -10,6 +10,7 @@ import Cookies from 'js-cookie';
 import { savePRProgressLocally } from './utils/storage';
 import { checkPRStatus } from './utils/validation';
 import Modal from './components/Modal';
+import StatusBadge from './components/StatusBadge';
 
 function App() {
   const [prUrl, setPrUrl] = useState('');
@@ -26,6 +27,7 @@ function App() {
   const [showEmailPrompt, setShowEmailPrompt] = useState(false);
   const client_secrets = import.meta.env.VITE_CODE;
   const [prUrls] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const stages = [
     'PR Approved',
@@ -161,59 +163,67 @@ function App() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+    
+    try {
+      if (!isValidGitHubPRUrl(prUrl)) {
+        setIsValid(false);
+        return;
+      }
 
-    if (!isValidGitHubPRUrl(prUrl)) {
-      setIsValid(false);
-      return;
-    }
+      const prNumber = prUrl.split('/').pop() || '';
+      const { isValid: isPRValid, isMerged } = await checkPRStatus(prNumber);
 
-    const prNumber = prUrl.split('/').pop() || '';
-    const { isValid: isPRValid, isMerged } = await checkPRStatus(prNumber);
+      if (!isPRValid) {
+        setIsValid(false);
+        return;
+      }
 
-    if (!isPRValid) {
-      setIsValid(false);
-      return;
-    }
+      setIsValid(true);
+      setIsSubmitted(true);
 
-    setIsValid(true);
-    setIsSubmitted(true);
+      const savedProgress = await getPRProgress(prUrl);
+      let initialProgress = 0;
+      let initialStage = stages[0];
 
-    const savedProgress = await getPRProgress(prUrl);
-    let initialProgress = 0;
-    let initialStage = stages[0];
-
-    if (savedProgress) {
-      if (isMerged && savedProgress.progress < 20) {
-        initialProgress = 20;
-        initialStage = stages[Math.floor((20 / 100) * (stages.length - 1))];
-        await savePRProgress(prUrl, initialProgress, initialStage);
+      if (savedProgress) {
+        if (isMerged && savedProgress.progress < 20) {
+          initialProgress = 20;
+          initialStage = stages[Math.floor((20 / 100) * (stages.length - 1))];
+          await savePRProgress(prUrl, initialProgress, initialStage);
+        } else {
+          initialProgress = savedProgress.progress;
+          initialStage = savedProgress.current_stage;
+        }
       } else {
-        initialProgress = savedProgress.progress;
-        initialStage = savedProgress.current_stage;
+        if (isMerged) {
+          initialProgress = 20;
+          initialStage = stages[Math.floor((20 / 100) * (stages.length - 1))];
+        }
+        await savePRProgress(prUrl, initialProgress, initialStage);
       }
-    } else {
-      if (isMerged) {
-        initialProgress = 20;
-        initialStage = stages[Math.floor((20 / 100) * (stages.length - 1))];
+
+      if (initialStage === 'Printing your 3d Case!') {
+        initialProgress = 36;
+      } else if (initialStage === "Ordering PCB's") {
+        initialProgress = 54;
       }
+
       await savePRProgress(prUrl, initialProgress, initialStage);
-    }
 
-    if (initialStage === 'Printing your 3d Case!') {
-      initialProgress = 36;
-    } else if (initialStage === "Ordering PCB's") {
-      initialProgress = 54;
-    }
+      setProgress(initialProgress);
+      setCurrentStage(initialStage);
+      savePRProgressLocally(prUrl, initialProgress, initialStage);
 
-    await savePRProgress(prUrl, initialProgress, initialStage);
-
-    setProgress(initialProgress);
-    setCurrentStage(initialStage);
-    savePRProgressLocally(prUrl, initialProgress, initialStage);
-
-    // Check if email is missing and show prompt
-    if (!savedProgress?.email) {
-      setShowEmailPrompt(true);
+      // Check if email is missing and show prompt
+      if (!savedProgress?.email) {
+        setShowEmailPrompt(true);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setIsValid(false);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -367,7 +377,10 @@ function App() {
                   <div className="space-y-6">
                     <div className="space-y-2">
                       <h2 className="text-xl font-semibold">Pull Request Status</h2>
-                      <p className="text-gray-400 text-sm break-all">{prUrl}</p>
+                      <div className="flex items-center space-x-2">
+                        <p className="text-gray-400 text-sm break-all">{prUrl}</p>
+                        <StatusBadge prUrl={prUrl} />
+                      </div>
                     </div>
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
