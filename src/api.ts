@@ -100,4 +100,26 @@ export const saveEmailToDatabase = async (prUrl: string, email: string) => {
     console.error('Error saving email:', error);
   }
   return data;
+};
+
+export const bulkUpdatePRProgress = async (updates: {
+  pr_url: string;
+  progress: number;
+  current_stage: string;
+  acrylic_cut: boolean;
+  soldered: boolean;
+}[]) => {
+  const { data, error } = await supabase
+    .from('pr_progress')
+    .upsert(updates, { 
+      onConflict: 'pr_url',
+      ignoreDuplicates: false 
+    })
+    .select();
+
+  if (error) {
+    console.error('Error in bulk update:', error);
+    return null;
+  }
+  return data;
 }; 

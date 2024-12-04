@@ -5,12 +5,13 @@ import ProgressBar from './components/ProgressBar';
 import AdminControls from './components/AdminControls';
 import LoginModal from './components/LoginModal';
 import { isValidGitHubPRUrl } from './utils/validation';
-import { savePRProgress, getPRProgress, saveEmailToDatabase } from './api';
+import { savePRProgress, getPRProgress, saveEmailToDatabase, bulkUpdatePRProgress } from './api';
 import Cookies from 'js-cookie';
 import { savePRProgressLocally } from './utils/storage';
 import { checkPRStatus } from './utils/validation';
 import Modal from './components/Modal';
 import StatusBadge from './components/StatusBadge';
+import { supabase } from './utils/supabaseClient';
 
 function App() {
   const [prUrl, setPrUrl] = useState('');
@@ -277,10 +278,22 @@ function App() {
   };
 
   const handleBulkUpdate = async (selectedPrs: string[], newProgress: number, newStage: string) => {
-    // Process each PR URL individually
-    await Promise.all(selectedPrs.map(pr => 
-      savePRProgress(pr, newProgress, newStage, acrylicCut, soldered)
-    ));
+    const updates = selectedPrs.map(pr => ({
+      pr_url: pr,
+      progress: newProgress,
+      current_stage: newStage,
+      acrylic_cut: acrylicCut,
+      soldered: soldered
+    }));
+
+    await bulkUpdatePRProgress(updates);
+    
+    // Update local storage for current PR
+    if (selectedPrs.includes(prUrl)) {
+      savePRProgressLocally(prUrl, newProgress, newStage, acrylicCut, soldered);
+      setProgress(newProgress);
+      setCurrentStage(newStage);
+    }
   };
 
   const handleEmailSubmit = async (email: string) => {
@@ -296,6 +309,37 @@ function App() {
     setEmail(email);
     setShowEmailPrompt(false);
   };
+
+  useEffect(() => {
+    if (!prUrl) return;
+
+    const subscription = supabase
+      .channel('pr_updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'pr_progress',
+          filter: `pr_url=eq.${prUrl}`
+        },
+        async (payload) => {
+          if (payload.new && 'progress' in payload.new) {
+            const { progress, current_stage, acrylic_cut, soldered } = payload.new;
+            setProgress(progress);
+            setCurrentStage(current_stage);
+            setAcrylicCut(acrylic_cut);
+            setSoldered(soldered);
+            savePRProgressLocally(prUrl, progress, current_stage, acrylic_cut, soldered);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, [prUrl]);
 
   return (
     <Routes>
