@@ -31,7 +31,7 @@ function App() {
     'PR Approved',
     '3D Printing',
     'Ordering PCBs',
-    'Soldering',
+    'Boxing all the parts!',
     'Out for Shipping',
     'Shipped :D ',
   ];
