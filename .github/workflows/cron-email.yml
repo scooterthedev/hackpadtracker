@@ -32,25 +32,25 @@ jobs:
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
 
-  sync_airtable:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+  # sync_airtable:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v2
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '16'
+  #     - name: Set up Node.js
+  #       uses: actions/setup-node@v2
+  #       with:
+  #         node-version: '16'
 
-      - name: Install dependencies
-        run: npm install
+  #     - name: Install dependencies
+  #       run: npm install
 
-      - name: Run Airtable sync script
-        run: npm run sync:airtable
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
-          BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
-          TABLE_NAME: ${{ secrets.AIRTABLE_TABLE_NAME }}
+  #     - name: Run Airtable sync script
+  #       run: npm run sync:airtable
+  #       env:
+  #         SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  #         SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+  #         AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
+  #         BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
+  #         TABLE_NAME: ${{ secrets.AIRTABLE_TABLE_NAME }}
